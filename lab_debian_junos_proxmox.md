@@ -21,14 +21,88 @@
 
 ## Objective
 
-The objective of this document is to deploy a Debian Server and a vJunos Switch within a Proxmox Virtual Environment (PVE). After both virtual machines have been provisioned, an LACP (Link Aggregation Control Protocol) configuration will be implemented to provide link redundancy and increased bandwidth between the Debian server and the vJunos switch.
+The objective of this document is to deploy a Debian Server and a vJunos Switch within a Proxmox Virtual Environment (PVE). Once both virtual machines have been successfully provisioned, a series of networking configurations will be implemented. Starting with a basic setup, the environment will be progressively expanded to introduce and demonstrate key networking technologies such as Link Layer Discovery Protocol (LLDP), Link Aggregation Control Protocol (LACP), and Virtual Local Area Networks (VLANs). This step-by-step approach is designed to provide a practical understanding of these concepts and their implementation in a virtualized network environment.
+```text
+
++------------------------------------------------------------------+
+|                                                                  |
+|                           Proxmox VE                             |
+|                           Hypervisor                             |
+|                                                                  |
+|       +---------------+               +---------------+          |
+|		|               |-----vmbr10----|               |          |
+|       | Debian 13 VM  |      LACP     |   vJunos VM   |          |
+|		|               |-----vmbr11----|               |          |
+|       +---------------+               +---------------+          |
+|               |                               |                  |
+|               +-------------vmbr0-------------+                  |
+|                               |                                  |
+--------------------------------+----------------------------------+
+                                |
+                         Physical Network
+```
 
 ---
 
 
-## Downloads:
+# Lab Architecture
 
-| Item                            | Value                                                            |
+## Lab Topology
+
+The diagram below illustrates the virtual lab environment that will be used throughout this guide. The environment is hosted on a single Proxmox VE hypervisor and consists of a Debian 13 virtual machine and a vJunos virtual switch.
+
+Both virtual machines are connected to three virtual bridges. The **vmbr0** bridge provides management connectivity and is connected to the physical network, allowing access from the management workstation as well as internet connectivity when required. This bridge is typically configured to obtain network settings through DHCP.
+
+The **vmbr10** and **vmbr11** bridges are dedicated to the data plane and are used to establish an LACP-based link aggregation between the Debian host and the vJunos switch. These two independent Layer 2 connections will later be combined into a single logical link using **bond0** on Debian and **ae0** on the vJunos device. This configuration provides both redundancy and increased bandwidth, while also serving as a practical platform for learning technologies such as LLDP, LACP, and VLANs.
+
+In summary:
+
+- **Debian 13 VM** acts as the Linux host.
+- **vJunos VM** acts as the virtual switch.
+- **vmbr0** provides management and external network access.
+- **vmbr10** and **vmbr11** are dedicated LACP member links.
+- The physical network is reachable through **vmbr0**.
+- The topology serves as the foundation for the exercises described in this document.
+
+
+```mermaid
+graph TB
+    subgraph PVE["Proxmox VE Hypervisor"]
+        subgraph DebianVM["Debian 13 VM"]
+            DB[" "]
+        end
+        subgraph vJunosVM["vJunos VM"]
+            VJ[" "]
+        end
+        subgraph Bridges["OVS Bridges"]
+            vmbr10["vmbr10<br/>LACP"]
+            vmbr0["vmbr0"]
+            vmbr11["vmbr11<br/>LACP"]
+        end
+    end
+    
+    subgraph PhysNet["Physical Network"]
+        PHY[" "]
+    end
+    
+    DebianVM -->|vmbr10| vmbr10
+    DebianVM -->|vmbr11| vmbr11
+    vJunosVM -->|vmbr10| vmbr10
+    vJunosVM -->|vmbr11| vmbr11
+    DebianVM -->|vmbr0| vmbr0
+    vJunosVM -->|vmbr0| vmbr0
+    vmbr0 --> PHY
+```
+
+# Installations
+
+---
+
+## Preparations
+
+### Downloads:
+
+| FileName                        | Link                                                             |
 | ------------------------------- | ---------------------------------------------------------------- |
 | proxmox-ve_9.2-1.iso            | https://www.proxmox.com/en/downloads/proxmox-virtual-environment |
 | vJunos-switch-26.2R1.7.qcow2    | https://support.juniper.net/support/downloads/?p=vjunos-switch   |
@@ -36,116 +110,19 @@ The objective of this document is to deploy a Debian Server and a vJunos Switch 
 
 ---
 
+## Installation of Proxmox
 
-# Objective
+This guide assumes that a fully operational Proxmox Virtual Environment (PVE) is already in place. A Linux bridge, **vmbr0**, should be configured and connected to both the internet and the local management network, allowing access from a workstation or management host. In addition, **vmbr0** is expected to be connected to a DHCP-enabled network that provides IP addressing, a default gateway, and DNS services to newly deployed virtual machines.
 
-This document describes how to deploy a minimal Debian 13 virtual machine on Proxmox VE as the foundation for a networking laboratory.
+## Installation of Debian
 
-Unlike a generic Debian installation guide, this document focuses on building a reusable platform for networking experiments and infrastructure testing.
+## Installation of vJunOS
 
-The completed virtual machine will be used throughout this documentation series for technologies including:
+## Configurations
 
-* Linux networking
-* Linux Bonding
-* IEEE 802.3ad (LACP)
-* VLAN implementation
-* Open vSwitch
-* Juniper vJunos
-* Packet captures
-* Network troubleshooting
 
-By the end of this guide you will have a clean, fully updated Debian installation that is ready for further configuration.
 
----
 
-# Background
-
-Modern networking laboratories require systems that are predictable, lightweight and easy to rebuild.
-
-Rather than installing unnecessary software, this guide follows a minimal installation philosophy.
-
-Only components that are required for future networking exercises are installed.
-
-This approach provides several advantages:
-
-* Faster deployment
-* Smaller attack surface
-* Easier troubleshooting
-* Lower resource consumption
-* Better understanding of the operating system
-
-Every chapter that follows builds upon this installation.
-
-For that reason, consistency during deployment is essential.
-
----
-
-# Why Debian?
-
-Debian has been selected as the primary Linux distribution for this project because it combines stability with long-term maintainability.
-
-For networking laboratories, predictable behaviour is significantly more valuable than having the newest software versions.
-
-Debian provides:
-
-* Long-term stability
-* Excellent package management
-* Extensive community documentation
-* Reliable security updates
-* Minimal default installation
-* Broad hardware and virtualization support
-
-Because Debian is widely used in production environments, the knowledge gained in this laboratory directly translates to real-world systems.
-
----
-
-# Lab Architecture
-
-The Debian virtual machine is only one component of the complete laboratory environment.
-
-The simplified topology is shown below.
-
-```text
-                     +----------------------+
-                     |     Proxmox VE       |
-                     |      Hypervisor      |
-                     +----------+-----------+
-                                |
-                +---------------+---------------+
-                |                               |
-        +---------------+               +---------------+
-        | Debian 13 VM  |               |   vJunos VM   |
-        +---------------+               +---------------+
-                |                               |
-                +----------- LACP --------------+
-                                |
-                        Open vSwitch
-                                |
-                           Physical Network
-```
-
-```mermaid
-flowchart TD
-    %% Stijl
-    classDef hypervisor fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef vm fill:#bbf,stroke:#333,stroke-width:2px;
-    classDef network fill:#8f8,stroke:#333,stroke-width:2px;
-    classDef switch fill:#ff9,stroke:#333,stroke-width:2px;
-
-    %% Knooppunten
-    Proxmox["Proxmox VE\nHypervisor"]:::hypervisor
-    Debian["Debian 13 VM"]:::vm
-    vJunos["vJunos VM"]:::vm
-    OVS["Open vSwitch"]:::switch
-    Physical["Physical Network"]:::network
-
-    %% Verbindingen
-    Proxmox --> Debian
-    Proxmox --> vJunos
-    Debian -->|LACP| OVS
-    vJunos -->|LACP| OVS
-    OVS --> Physical
-```
 
 Throughout this documentation additional virtual machines, VLANs and services will be added without changing this fundamental design.
 
