@@ -112,16 +112,37 @@ graph TB
 
 </br>
 
-##  Debian 13 ISO upload to Proxmox
+## Upload the Debian 13 ISO to Proxmox
 
-1. Log in op de **Proxmox webinterface** (`https://<proxmox-ip>:8006`).
-2. Navigeer naar:
-   **`Datacenter` → `<Jouw Proxmox-node>` → `local (of andere opslag)` → `ISO Images`**.
-3. Klik op **`Upload`** en selecteer de gedownloade Debian 13 ISO.
-   - Wacht tot de upload voltooid is (status: **"OK"**).
+Before creating the Debian virtual machine, the Debian 13 installation ISO must be uploaded to the Proxmox storage repository.
 
-> ✅ **Verificatie:** Controleer of de ISO zichtbaar is in de lijst onder `ISO Images`.
+### Steps
 
+1. Open a web browser and log in to the **Proxmox Web Interface**:
+
+```text
+   https://<proxmox-ip>:8006
+```
+Datacenter
+└── <Proxmox Node>
+    └── local (or your preferred storage)
+        └── ISO Images
+
+        Click Upload.
+
+
+Select the downloaded Debian 13 ISO file from your local workstation.
+
+
+Wait for the upload process to complete successfully.
+
+
+
+Verification
+Verify that the Debian ISO image is visible in the ISO Images section.
+✅ Expected Result
+Plain Text1Datacenter2└── <Proxmox Node>3    └── local4        └── ISO Images5            └── debian-13.x.x-amd64-netinst.isoShow more lines
+Once the ISO image appears in the repository, you can proceed with creating the Debian 13 virtual machine.
 ---
 
 </br>
@@ -772,3 +793,28 @@ sudo ufw enable
 | Versie | Datum | Wijzigingen |
 |--------|-------|-------------|
 | 1.0 | 09-07-2026 | Initiële versie, gebaseerd op Debian 13 (Trixie) |
+
+
+
+```mermaid
+graph TD
+    A["Patiënt aankomst<br/>Spoedeisende Hulp"] --> B["Triage<br/>Urgentie bepalen"]
+    B --> C["Initieel onderzoek<br/>Anamnese & vitale functies"]
+    C --> D["Laboratoriumtesten<br/>Bloed, urine"]
+    D --> E["Beeldvorming<br/>CT-scan/Ultrasound"]
+    E --> F{"Blinddarmontsteking<br/>gediagnostiseerd?"}
+    F -->|Nee| G["Andere behandeling<br/>of ontslag"]
+    F -->|Ja| H{"Complicaties<br/>aanwezig?"}
+    H -->|Perforatie/Peritonitis| I["Acute spoedoperatie<br/>Operatiekamer"]
+    H -->|Ongecompliceerd| J{"Medicamenteuze<br/>behandeling mogelijk?"}
+    J -->|Nee| I
+    J -->|Ja| K["Antibiotica-therapie<br/>Verpleegafdeling"]
+    K --> L{"Klinisch<br/>verbeterd?"}
+    L -->|Nee| I
+    L -->|Ja| M["Verder poliklinisch<br/>vervolgd"]
+    I --> N["Post-operatieve zorg<br/>Intensive Care/Afdeling"]
+    N --> O["Revalidatie<br/>en ontslag"]
+    M --> O
+    G --> O
+    O --> P["Vervolgafspraak<br/>Polikliniek"]
+```
