@@ -1,7 +1,5 @@
-# Deploying a Debian Server and vJunos Switch in Proxmox
-
----
-
+# Lab: Debian Server and vJunos Switch in Proxmox with LACP
+</br></br>
 ## Document Information
 
 | Item               | Value                                                          |
@@ -18,6 +16,7 @@
 
 ---
 
+</br>
 
 ## Objective
 
@@ -44,10 +43,9 @@ The objective of this document is to deploy a Debian Server and a vJunos Switch 
 
 ---
 
+</br>
 
-# Lab Architecture
-
-## Lab Topology
+## Lab Architecture
 
 The diagram below illustrates the virtual lab environment that will be used throughout this guide. The environment is hosted on a single Proxmox VE hypervisor and consists of a Debian 13 virtual machine and a vJunos virtual switch.
 
@@ -94,13 +92,15 @@ graph TB
     vmbr0 --> PHY
 ```
 
-# Installations
-
 ---
 
-## Preparations
+</br>
 
-### Downloads:
+# Preparations
+
+</br>
+
+## Downloads:
 
 | FileName                        | Link                                                             |
 | ------------------------------- | ---------------------------------------------------------------- |
@@ -110,15 +110,214 @@ graph TB
 
 ---
 
+</br>
+
+##  Debian 13 ISO upload to Proxmox
+
+1. Log in op de **Proxmox webinterface** (`https://<proxmox-ip>:8006`).
+2. Navigeer naar:
+   **`Datacenter` → `<Jouw Proxmox-node>` → `local (of andere opslag)` → `ISO Images`**.
+3. Klik op **`Upload`** en selecteer de gedownloade Debian 13 ISO.
+   - Wacht tot de upload voltooid is (status: **"OK"**).
+
+> ✅ **Verificatie:** Controleer of de ISO zichtbaar is in de lijst onder `ISO Images`.
+
+---
+
+</br>
+
+##  vJunos QCOW upload to Proxmox
+
+---
+
+</br>
+
+
+# Installations
+
+</br>
+
 ## Installation of Proxmox
 
 This guide assumes that a fully operational Proxmox Virtual Environment (PVE) is already in place. A Linux bridge, **vmbr0**, should be configured and connected to both the internet and the local management network, allowing access from a workstation or management host. In addition, **vmbr0** is expected to be connected to a DHCP-enabled network that provides IP addressing, a default gateway, and DNS services to newly deployed virtual machines.
+Before proceeding with the remainder of this guide, verify that the Proxmox installation is functioning correctly. The environment is considered ready when you can successfully access and log in to the **Proxmox Web Interface** using the following URL:
+```text
+https://<proxmox-ip>:8006
+```
+
+---
+
+</br>
 
 ## Installation of Debian
 
+
+### 2️⃣ Nieuwe VM aanmaken
+1. Klik in de Proxmox webinterface op **`Create VM`** (rechterboven).
+2. Vul de volgende gegevens in:
+
+   | Instelling | Waarde | Opmerking |
+   |------------|--------|-----------|
+   | **VM ID** | `100` (of volgende vrije ID) | Uniek per Proxmox-node |
+   | **Naam** | `debian13-server` | Kies een duidelijke naam |
+   | **OS** | Selecteer de geüploade **Debian 13 ISO** | Onder `ISO Image` |
+   | **Hard Disk** | `20 GiB` (of meer) | Gebruik **`virtio`** als opslagcontroller |
+   | **CPU** | `2 cores` | Pas aan op basis van workload |
+   | **Memory** | `2048 MiB` (2 GB) | Minimaal voor basisinstallatie |
+   | **Netwerk** | `virtio` | Voor beste prestaties |
+   | **Bridge** | `vmbr0` | Standaard netwerkbrug |
+   | **CD/DVD** | `IDE` (of `SATA`) | Voor ISO-mounting |
+
+3. Klik op **`Finish`** om de VM aan te maken.
+
+> 💡 **Tip:** Gebruik **`virtio`** voor schijven en netwerk voor betere prestaties in KVM-omgevingen.
+
+---
+
+---
+
+### 3️⃣ Debian 13 installeren
+#### Stap 1: VM starten en installer openen
+1. Selecteer de nieuwe VM (`debian13-server`) in de Proxmox webinterface.
+2. Klik op **`Console`** (of **`>_ Shell`**) om de console te openen.
+3. Klik op **`Start`** om de VM op te starten.
+4. De Debian installer start automatisch. Selecteer **`Graphical install`** (of **`Install`** voor tekstmodus).
+
+#### Stap 2: Taal en regio
+| Optie | Selectie | Opmerking |
+|-------|----------|-----------|
+| **Language** | `Dutch` (of `English`) | Kies je voorkeurstaal |
+| **Country** | `Netherlands` | Voor tijdzone en toetsenbord |
+| **Locale** | `nl_NL.UTF-8` | UTF-8 codering |
+| **Keyboard** | `nl` (of `us`) | Toetsenbordindeling |
+
+#### Stap 3: Netwerkconfiguratie
+| Optie | Waarde | Opmerking |
+|-------|--------|-----------|
+| **Hostname** | `debian13` | Of een unieke naam (bv. `server01`) |
+| **Domain name** | `local` (of je domein) | Laat leeg voor lokaal gebruik |
+| **IPv4** | `DHCP` | Of configureer een **statisch IP** |
+| **IPv6** | `Neen` | Tenzij je IPv6 gebruikt |
+
+> ⚠️ **Belangrijk:** Als je een **statisch IP** wilt gebruiken, noteer dan:
+> - IP-adres (bv. `192.168.1.100`)
+> - Netmask (bv. `255.255.255.0`)
+> - Gateway (bv. `192.168.1.1`)
+> - DNS-servers (bv. `8.8.8.8, 8.8.4.4`)
+
+#### Stap 4: Gebruikers en wachtwoorden
+| Optie | Actie | Opmerking |
+|-------|-------|-----------|
+| **Root password** | Stel een **sterk wachtwoord** in | Bewaar dit veilig! |
+| **Full name** | Vul je naam in | Optioneel |
+| **Username** | `gijs` (of andere gebruiker) | Gebruiker voor dagelijks gebruik |
+| **User password** | Stel een wachtwoord in | Verschillend van root-wachtwoord |
+
+#### Stap 5: Schijfpartitie
+1. Kies **`Guided - use entire disk`** (voor beginners) of **`Manual`** (voor gevorderden).
+2. Selecteer de virtuele schijf (bv. `/dev/vda`).
+3. Kies **`All files in one partition`** (aanbevolen voor VM's).
+4. Bevestig de wijzigingen en schrijf naar schijf.
+
+#### Stap 6: Pakketselectie
+1. **Deselecteer** alle opties (behalve `standard system utilities`).
+   - Debian 13 installeert standaard een minimale omgeving.
+2. Selecteer **`SSH server`** als je remote toegang wilt.
+3. Selecteer **`Debian desktop environment`** als je een GUI wilt (niet aanbevolen voor servers).
+4. Klik op **`Continue`** om de installatie te starten.
+
+> ⏳ **Wachttijd:** De installatie duurt **5–15 minuten**, afhankelijk van je hardware en netwerksnelheid.
+
+#### Stap 7: Bootloader installeren
+1. Selecteer **`Yes`** om de GRUB bootloader te installeren op `/dev/vda`.
+2. Kies **`/dev/vda`** als installatielocatie.
+
+---
+---
+### 4️⃣ Eerste opstart en inloggen
+1. Na voltooiing van de installatie klik je op **`Finish the installation`**.
+2. De VM herstart automatisch. Sluit de console en start de VM opnieuw op via Proxmox.
+3. Open de console en log in met:
+   ```bash
+   Gebruikersnaam: gijs (of je gekozen gebruiker)
+   Wachtwoord: <je wachtwoord>
+   ```
+   > Of als root:
+   > ```bash
+   > login: root
+   > Password: <root-wachtwoord>
+   > ```
+
+4. Voer het volgende commando uit om te controleren of de installatie succesvol was:
+   ```bash
+   cat /etc/debian_version
+   ```
+   **Verwachte output:**
+   ```
+   13.0
+   ```
+
+---
+
+</br>
+
 ## Installation of vJunOS
 
-## Configurations
+To deploy the vJunos virtual switch, log in to the Proxmox host using your preferred SSH client. Once connected, create or modify the virtual machine configuration file and apply the configuration shown below.
+
+The configuration provisions a vJunos instance with:
+
+- **4 vCPUs**
+- **5 GB RAM**
+- **Q35 machine type**
+- **One management interface** connected to **vmbr0**
+- **Two data interfaces** connected to **vmbr10** and **vmbr11** for the LACP lab
+- **Virtual disk** attached through the VM storage pool
+
+> **Note:** Adjust the VM ID, VM name, MAC addresses, and storage location to match your environment.
+> Make sure you add enough cpu/ram, otherwise the dataplane will not work!
+
+### Example vJunos VM Configuration
+
+```text
+args: -cpu 'host,+sse4.2,+aes'
+boot: order=sata0
+cores: 4
+cpu: host
+machine: q35
+memory: 5120
+name: vJunOS-1
+net0: virtio=BC:24:11:87:24:B6,bridge=vmbr0
+net1: virtio=BC:24:11:6E:DB:83,bridge=vmbr10
+net2: virtio=BC:24:11:1C:AA:A5,bridge=vmbr11
+ostype: l26
+sata0: VM-POOL:vm-604-disk-0,size=32521M
+serial0: socket
+```
+
+### Network Interface Mapping
+
+| Interface | Bridge | Purpose |
+|------------|---------|---------|
+| net0 | vmbr0 | Management |
+| net1 | vmbr10 | LACP Member Link 1 |
+| net2 | vmbr11 | LACP Member Link 2 |
+
+### Verification
+
+After starting the virtual machine, verify that:
+
+- The VM reaches the **Running** state.
+- A console session can be opened from the Proxmox web interface.
+- The management interface receives an IP address.
+- All three virtual interfaces are visible within the vJunos operating system.
+
+Once these checks have been completed successfully, you can continue with the initial vJunos configuration and the LACP setup described in the next sections.
+
+
+
+
+# Configurations
 
 
 
@@ -126,157 +325,11 @@ This guide assumes that a fully operational Proxmox Virtual Environment (PVE) is
 
 Throughout this documentation additional virtual machines, VLANs and services will be added without changing this fundamental design.
 
----
-
-# Design Philosophy
-
-This repository follows several principles.
-
-## Keep It Minimal
-
-Every installed package should have a purpose.
-
-Unused software increases complexity without providing value.
-
----
-
-## Build Incrementally
-
-The operating system should first be installed and verified.
-
-Only after validation will additional software be introduced.
-
-Examples include:
-
-* OpenSSH Server
-* QEMU Guest Agent
-* tcpdump
-* ethtool
-* lldpd
-* bridge-utils
-
-Each component will be documented in a separate chapter.
-
----
-
-## Document Everything
-
-Configuration changes should never rely on memory.
-
-Every important decision should be documented, including:
-
-* Why a specific setting was chosen
-* Why an alternative was rejected
-* Any deviations from the standard lab design
-
----
-
-# Prerequisites
-
-Before beginning the installation, verify that the following requirements have been met.
-
-## Hardware Requirements
-
-Recommended minimum resources.
-
-| Component          | Recommended                 |
-| ------------------ | --------------------------- |
-| CPU                | 2 vCPUs                     |
-| Memory             | 4 GB                        |
-| Storage            | 20 GB                       |
-| Network Interfaces | 2 VirtIO adapters (minimum) |
-| Firmware           | UEFI or BIOS                |
-| Machine Type       | q35                         |
-
-Additional interfaces may be added later for advanced networking exercises.
-
----
-
-## Software Requirements
-
-The following software should already be available.
-
-| Software                | Purpose                       |
-| ----------------------- | ----------------------------- |
-| Proxmox VE 9.x          | Virtualization platform       |
-| Debian 13.5 Netinst ISO | Operating system installation |
-| Internet connectivity   | Package installation          |
-| Administrative access   | Proxmox management            |
-
----
-
-# Installation Philosophy
-
 The objective is **not** to build a production server.
 
 The objective is to create a clean engineering platform that can safely be modified, broken, restored and rebuilt during laboratory exercises.
 
-Whenever possible:
 
-* Keep the installation reproducible.
-* Prefer simplicity over unnecessary optimisation.
-* Validate every configuration step.
-* Document observations while working.
-
----
-
-# Expected Result
-
-After completing this chapter, the virtual machine will provide:
-
-* A minimal Debian 13 installation
-* Internet connectivity
-* SSH access
-* Updated packages
-* Stable baseline configuration
-
-This system will serve as the foundation for every networking lab described in subsequent chapters.
-
----
-
-# Lab Notes
-
-Use this section to record information specific to your own environment.
-
-Examples include:
-
-* Proxmox node name
-* VM ID
-* Hostname
-* Static IP address
-* VLAN assignments
-* Storage location
-* Snapshot names
-
-Keeping these notes together with the documentation makes future maintenance considerably easier.
-
----
-
-## Installation of Debian
-
-## Installation of vJunOS
-
-## Configurations
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Deploying a Debian Server and vJunos Switch in Proxmox with LACP Configuration
-
-## Objective
-
-The objective of this document is to deploy a Debian Server and a vJunos Switch within a Proxmox Virtual Environment (PVE). After both virtual machines have been provisioned, an LACP (Link Aggregation Control Protocol) configuration will be implemented to provide link redundancy and increased bandwidth between the Debian server and the vJunos switch.
-
----
 
 ## Background
 
