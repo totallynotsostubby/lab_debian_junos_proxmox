@@ -25,10 +25,10 @@
    - [3.1 Downloads](#31-downloads)
    - [3.2 Upload Debian ISO to Proxmox](#32-upload-debian-iso-to-proxmox)
    - [3.3 Upload vJunos Image to Proxmox](#33-upload-vjunos-image-to-proxmox)
-5. [Installations](#installations)
-   - [5.1 Proxmox VE Assumptions](#51-proxmox-ve-assumptions)
-   - [5.2 Debian VM](#52-debian-vm)
-   - [5.3 vJunos VM](#53-vjunos-vm)
+4. [Installations](#installations)
+   - [4.1 Proxmox VE Assumptions](#41-proxmox-ve-assumptions)
+   - [4.2 Debian VM](#42-debian-vm)
+   - [4.3 vJunos VM](#43-vjunos-vm)
 6. [Configurations](#configurations)
    - [6.1 Proxmox OVS Bridges](#61-proxmox-ovs-bridges)
    - [6.2 Debian Network Bonding (LACP)](#62-debian-network-bonding-lacp)
@@ -178,17 +178,14 @@ graph TB
 
 </br>
 
-## 3.2 Upload the Debian 13 ISO to Proxmox
-
-Before creating the Debian virtual machine, upload the Debian 13 installation ISO to your Proxmox storage.
+## 3.2 Upload Debian ISO to Proxmox
 
 ### 1. Access the Proxmox Web Interface
 
 Open a web browser and navigate to:
-
-`https://<proxmox-ip>:8006`
-
-Log in using your Proxmox administrator credentials.
+```text
+https://<proxmox-ip>:8006
+```
 
 ### 2. Navigate to the ISO Storage
 
@@ -201,7 +198,7 @@ In the left navigation pane, browse to:
 
 ### 3. Upload the ISO Image
 
-Click **Upload** and select the previously downloaded **Debian 13 ISO** file from your local system.
+Click **Upload** and select the previously downloaded **debian-12.5.0-amd64-netinst.iso** file from your local system.
 
 ### 4. Wait for the Upload to Complete
 
@@ -219,7 +216,7 @@ Monitor the upload progress and wait until the task finishes successfully. The t
 </br>
 
 
-## 3.3 Upload the vJunos QCOW2 Image to Proxmox
+## 3.3 Upload vJunos Image to Proxmox
 
 ### 1. Transfer the Image to the Proxmox Host
 
@@ -228,13 +225,9 @@ Copy the vJunos QCOW2 image to the Proxmox server using SCP or another file tran
 Example:
 
 ```bash
-scp vjunos-switch.qcow2 root@<proxmox-ip>:/var/lib/vz/images/
+# Linux/macOS (Terminal)
+scp vJunos-switch-26.2R1.7.qcow2 root@<proxmox-ip>:/var/lib/vz/images/
 ```
-
-
----
-
-
 
 ### 2. Verify the Uploaded Image
 
@@ -249,13 +242,13 @@ ls -lh /var/lib/vz/images/
 Next, calculate the SHA256 checksum of the uploaded image:
 
 ```bash
-sha256sum /var/lib/vz/images/vjunos-switch.qcow2
+sha256sum /var/lib/vz/images/vJunos-switch-26.2R1.7.qcow2
 ```
 
 Example output:
 
 ```text
-d2f6e6d3e7ab1234567890abcdef1234567890abcdef1234567890abcdef12  vjunos-switch.qcow2
+d2f6e6d3e7ab1234567890abcdef1234567890abcdef1234567890abcdef12  vJunos-switch-26.2R1.7.qcow2
 ```
 
 Compare the resulting checksum with the SHA256 hash provided by Juniper for the downloaded image.
@@ -272,7 +265,7 @@ Compare the resulting checksum with the SHA256 hash provided by Juniper for the 
 
 </br>
 
-## Installation of Proxmox
+## 4.1 Proxmox VE Assumptions
 
 This guide assumes that a fully operational Proxmox Virtual Environment (PVE) is already in place. A Linux bridge, **vmbr0**, should be configured and connected to both the internet and the local management network, allowing access from a workstation or management host. In addition, **vmbr0** is expected to be connected to a DHCP-enabled network that provides IP addressing, a default gateway, and DNS services to newly deployed virtual machines.
 Before proceeding with the remainder of this guide, verify that the Proxmox installation is functioning correctly. The environment is considered ready when you can successfully access and log in to the **Proxmox Web Interface** using the following URL:
@@ -284,7 +277,7 @@ https://<proxmox-ip>:8006
 
 </br>
 
-## Debian 13 Installation on Proxmox VE
+## 4.2 Debian VM
 
 This guide provides clear, step-by-step instructions for installing **Debian 13** as a virtual machine (VM) in **Proxmox VE**.
 
@@ -404,13 +397,14 @@ You now can login via ssh
 
 </br>
 
-## Installation of vJunOS
+## 4.3 vJunos VM
 
 To deploy the vJunos virtual switch, log in to the Proxmox host using your preferred SSH client. Once connected, create or modify the virtual machine configuration file and apply the configuration shown below.
 
 ### The configuration provisions a vJunos instance with:
 
-```text
+```bash
+# Create VM 701 for vJunos
 qm create 701 \
   --name SWITCH-1 \
   --ostype l26 \
@@ -420,13 +414,21 @@ qm create 701 \
   --net0 virtio=CA:FE:BA:BE:AA:01,bridge=vmbr0 \
   --net1 virtio=CA:FE:BA:BE:BB:01,bridge=vmbr10 \
   --net2 virtio=CA:FE:BA:BE:CC:01,bridge=vmbr11
+
+# Import the vJunos disk image
 qm importdisk 701 /var/lib/vz/images/vJunos-switch-26.2R1.7.qcow2 VM-POOL --format=qcow2
+
+# Attach the disk and configure boot
 qm set 701 --sata0 VM-POOL:vm-604-disk-0
 qm set 701 --boot order=sata0
 qm set 701 --cpu host
 qm set 701 --args "-cpu 'host,+sse4.2,+aes'"
 qm set 701 --serial0 socket
 qm set 701 --machine q35
+
+# Below 2 commands are not tested yet, it work leaving them out
+qm set 701 --kvm 1
+qm set 701 --hidden 1  # Critical for vJunos dataplane
 ```
 
 
@@ -464,6 +466,10 @@ After starting the virtual machine, verify that:
 
 Once these checks have been completed successfully, you can continue with the initial vJunos configuration and the LACP setup described in the next sections.
 
+From the Proxmox terminal you can logon with:
+```bash
+qm terminal 701
+```
 
 ---
 
@@ -476,18 +482,22 @@ Once these checks have been completed successfully, you can continue with the in
 
 </br>
 
-## Configuration of Proxmox
-Configureer 2 ovs bridges met extended opties voor bpdu
-```text
-# Creation of vmbr10 en vmbr11 (for LACP)
+## 5.1 Proxmox OVS Bridges
+
+Configure vmbr10 and vmbr11 for LACP traffic:
+
+```bash
+# Create OVS bridges for LACP
 ovs-vsctl add-br vmbr10
 ovs-vsctl add-br vmbr11
 
-# Enable other-config
+# Enable other-config needed for LLDP
 ovs-vsctl set Bridge vmbr10 other-config:forward-bpdu=true
+ovs-vsctl set Bridge vmbr11 other-config:forward-bpdu=true
+
+#Enable below. It my test I did not use them, needs a look
 ovs-vsctl set bridge vmbr10 other-config:disable-in-band=true
 ovs-vsctl set bridge vmbr10 other-config:enable-8021q=true
-ovs-vsctl set Bridge vmbr11 other-config:forward-bpdu=true
 ovs-vsctl set bridge vmbr11 other-config:disable-in-band=true
 ovs-vsctl set bridge vmbr11 other-config:enable-8021q=true
 
@@ -500,7 +510,7 @@ ovs-vsctl show
 
 </br>
 
-## Configuration of Debian
+## 5.2 Debian Network Bonding (LACP)
 
 
 ## 🔧 Post-installatie configuratie
@@ -601,6 +611,15 @@ set protocols lldp interface all
 set protocols lldp management-address 192.168.1.2
 ```
 
+
+Verify LACP Status
+
+```junos
+show lacp interfaces
+show lacp statistics
+show lldp neighbors
+show ethernet-switching table
+```
 
 ---
 
