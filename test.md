@@ -18,8 +18,8 @@
 ---
 
 ## 📚 Table of Contents
-1. [Objective](##-objective)
-2. [Lab Architecture](##-lab-architecture)
+1. [Objective](##objective)
+2. [Lab Architecture](##lab-architecture)
 3. [Prerequisites](#prerequisites)
 4. [Preparations](#preparations)
    - [4.1 Downloads](#41-downloads)
