@@ -18,6 +18,32 @@
 
 </br>
 
+## Table of Contents
+1. [Objective](#objective)
+2. [Lab Architecture](#lab-architecture)
+3. [Prerequisites](#prerequisites)
+4. [Preparations](#preparations)
+   - [4.1 Downloads](#41-downloads)
+   - [4.2 Upload Debian ISO to Proxmox](#42-upload-debian-iso-to-proxmox)
+   - [4.3 Upload vJunos Image to Proxmox](#43-upload-vjunos-image-to-proxmox)
+5. [Installations](#installations)
+   - [5.1 Proxmox VE Assumptions](#51-proxmox-ve-assumptions)
+   - [5.2 Debian VM](#52-debian-vm)
+   - [5.3 vJunos VM](#53-vjunos-vm)
+6. [Configurations](#configurations)
+   - [6.1 Proxmox OVS Bridges](#61-proxmox-ovs-bridges)
+   - [6.2 Debian Network Bonding (LACP)](#62-debian-network-bonding-lacp)
+   - [6.3 vJunos LACP Configuration](#63-vjunos-lacp-configuration)
+7. [Verification](#verification)
+8. [Troubleshooting](#troubleshooting)
+9. [Appendix](#appendix)
+   - [9.1 Useful Commands](#91-useful-commands)
+   - [9.2 VLAN Extension (Optional)](#92-vlan-extension-optional)
+
+---
+
+</br>
+
 ## Objective
 
 The objective of this document is to deploy a Debian Server and a vJunos Switch within a Proxmox Virtual Environment (PVE). Once both virtual machines have been successfully provisioned, a series of networking configurations will be implemented. Starting with a basic setup, the environment will be progressively expanded to introduce and demonstrate key networking technologies such as Link Layer Discovery Protocol (LLDP), Link Aggregation Control Protocol (LACP), and Virtual Local Area Networks (VLANs). This step-by-step approach is designed to provide a practical understanding of these concepts and their implementation in a virtualized network environment.
@@ -90,6 +116,47 @@ graph TB
     DebianVM -->|vmbr0| vmbr0
     vJunosVM -->|vmbr0| vmbr0
     vmbr0 --> PHY
+```
+
+
+```mermaid
+graph TB
+    subgraph Proxmox["Proxmox VE Hypervisor"]
+        subgraph Debian["Debian VM\n(Host)"]
+            D0[("eth0\nvmbr0\nManagement")]
+            D1[("eth1\nvmbr10\nLACP Member 1")]
+            D2[("eth2\nvmbr11\nLACP Member 2")]
+            B0[("bond0\nLACP Aggregation")]
+        end
+        subgraph vJunos["vJunos VM\n(Switch)"]
+            V0[("ge-0/0/0\nvmbr0\nManagement")]
+            V1[("ge-0/0/1\nvmbr10\nLACP Member 1")]
+            V2[("ge-0/0/2\nvmbr11\nLACP Member 2")]
+            A0[("ae0\nLACP Aggregation")]
+        end
+        subgraph Bridges["OVS Bridges"]
+            vmbr0[("vmbr0\nManagement")]
+            vmbr10[("vmbr10\nLACP Link 1")]
+            vmbr11[("vmbr11\nLACP Link 2")]
+        end
+    end
+    subgraph PhysNet["Physical Network"]
+        Router[("Router/Switch")]
+    end
+
+    D0 --> vmbr0
+    V0 --> vmbr0
+    vmbr0 --> Router
+
+    D1 --> vmbr10
+    D2 --> vmbr11
+    V1 --> vmbr10
+    V2 --> vmbr11
+
+    B0 --> D1
+    B0 --> D2
+    A0 --> V1
+    A0 --> V2
 ```
 
 ---
