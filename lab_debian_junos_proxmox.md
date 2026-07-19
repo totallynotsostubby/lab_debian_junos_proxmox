@@ -291,15 +291,20 @@ This guide provides clear, step-by-step instructions for installing **Debian 13*
 
  | **Setting**       | **Value**               | **Note**                          |
  |-------------------|-------------------------|-----------------------------------|
- | VM ID             | `801` (or next available) | Unique per Proxmox node          |
- | Name              | `deb-lab-01`       | Choose a descriptive name        |
- | OS                | Debian 13 ISO           | Select under `ISO Image`         |
- | Hard Disk         | `20 GiB` (or more)      | Use **`virtio`** storage controller |
- | CPU               | `2 cores`               | Adjust based on workload         |
- | Memory            | `2048 MiB` (2 GB)       | Minimum for basic installation     |
- | Network           | `virtio`                | For best performance             |
- | Bridge            | `vmbr0`                 | Default network bridge           |
- | Guestding         | `yes`                 | Guest           |
+ | VM ID             | `801` (or next available) | Unique per Proxmox node         |
+ | Name              | `deb-lab-01`            | Choose a descriptive name         |
+ | Tags              | `LAB`                   | Optional tags        |
+ | Start at boot     | `no`                    | Config change needed              |
+ | ISO               |debian-13.5.0-amd64-netinst.iso   | Select under `ISO Image` |
+ | Machine           | `q35`                   | advised                           |
+ | BIOS              | `SeaBIOS` or 'OVMF(UEFI)'                    | Optional tags        |
+ | Qemu Agent        | `yes`                   | Advised                           |
+ | Hard Disk         | `20 GiB` (or more)      | Use **`virtio`** storage controller(I used SCSI)|
+ | CPU               | `2 cores`               | Type = host         |
+ | Memory            | `2048 MiB` (2 GB)       | Minimum for basic installation    |
+ | Network           | `virtio`                | For best performance              |
+ | Bridge            | `vmbr0`                 | Default network bridge            |
+ | Guestding         | `yes`                   | Guest           |
 
 
 4. Click **`Finish`** to create the VM.
