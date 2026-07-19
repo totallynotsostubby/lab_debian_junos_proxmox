@@ -334,7 +334,29 @@ https://<proxmox-ip>:8006
 
 To deploy the vJunos virtual switch, log in to the Proxmox host using your preferred SSH client. Once connected, create or modify the virtual machine configuration file and apply the configuration shown below.
 
-The configuration provisions a vJunos instance with:
+### The configuration provisions a vJunos instance with:
+
+```text
+qm create 701 \
+  --name SWITCH-1 \
+  --ostype l26 \
+  --memory 5120 \
+  --cores 4 \
+  --sockets 1 \
+  --net0 virtio=CA:FE:BA:BE:AA:01,bridge=vmbr0 \
+  --net1 virtio=CA:FE:BA:BE:BB:01,bridge=vmbr10 \
+  --net2 virtio=CA:FE:BA:BE:CC:01,bridge=vmbr11
+qm importdisk 701 /var/lib/vz/images/vJunos-switch-26.2R1.7.qcow2 VM-POOL --format=qcow2
+qm set 701 --sata0 VM-POOL:vm-604-disk-0
+qm set 701 --boot order=sata0
+qm set 701 --cpu host
+qm set 701 --args "-cpu 'host,+sse4.2,+aes'"
+qm set 701 --serial0 socket
+qm set 701 --machine q35
+```
+
+
+This will give you the following:
 
 - **4 vCPUs**
 - **5 GB RAM**
@@ -343,26 +365,10 @@ The configuration provisions a vJunos instance with:
 - **Two data interfaces** connected to **vmbr10** and **vmbr11** for the LACP lab
 - **Virtual disk** attached through the VM storage pool
 
-> **Note:** Adjust the VM ID, VM name, MAC addresses, and storage location to match your environment.
-> Make sure you add enough cpu/ram, otherwise the dataplane will not work!
+> **Note:** Adjust the VM ID, VM name and storage location to match your environment.
+> **Note:** Make sure you add enough cpu/ram, otherwise the dataplane will not work!
 
-### Example vJunos VM Configuration
 
-```text
-args: -cpu 'host,+sse4.2,+aes'
-boot: order=sata0
-cores: 4
-cpu: host
-machine: q35
-memory: 5120
-name: vJunOS-1
-net0: virtio=BC:24:11:87:24:B6,bridge=vmbr0
-net1: virtio=BC:24:11:6E:DB:83,bridge=vmbr10
-net2: virtio=BC:24:11:1C:AA:A5,bridge=vmbr11
-ostype: l26
-sata0: VM-POOL:vm-604-disk-0,size=32521M
-serial0: socket
-```
 
 ### Network Interface Mapping
 
@@ -380,6 +386,7 @@ After starting the virtual machine, verify that:
 - A console session can be opened from the Proxmox web interface.
 - The management interface receives an IP address.
 - All three virtual interfaces are visible within the vJunos operating system.
+- If the datapane is not working you have not sufficient resources(CPU/RAM).
 
 Once these checks have been completed successfully, you can continue with the initial vJunos configuration and the LACP setup described in the next sections.
 
@@ -397,8 +404,23 @@ Once these checks have been completed successfully, you can continue with the in
 
 ## Configuration of Proxmox
 Configureer 2 ovs bridges met extended opties voor bpdu
+```text
+# Creation of vmbr10 en vmbr11 (for LACP)
+ovs-vsctl add-br vmbr10
+ovs-vsctl add-br vmbr11
 
+# Enable other-config
+ovs-vsctl set Bridge vmbr10 other-config:forward-bpdu=true
+ovs-vsctl set bridge vmbr10 other-config:disable-in-band=true
+ovs-vsctl set bridge vmbr10 other-config:enable-8021q=true
+ovs-vsctl set Bridge vmbr11 other-config:forward-bpdu=true
+ovs-vsctl set bridge vmbr11 other-config:disable-in-band=true
+ovs-vsctl set bridge vmbr11 other-config:enable-8021q=true
 
+# Verificatie
+ovs-vsctl show
+
+````
 
 ---
 
@@ -406,12 +428,72 @@ Configureer 2 ovs bridges met extended opties voor bpdu
 
 ## Configuration of Debian
 
+```text
+# /etc/network/interfaces
+auto eth1
+iface eth1 inet manual
+    bond-master bond0
 
+auto eth2
+iface eth2 inet manual
+    bond-master bond0
+
+auto bond0
+iface bond0 inet manual
+    bond-slaves eth1 eth2
+    bond-mode 4       # 802.3ad (LACP)
+    bond-miimon 100   # Monitoring interval (ms)
+    bond-lacp-rate 1  # Fast LACP rate
+    bond-updelay 0
+    bond-downdelay 0
+```
+
+    
 ---
 
 </br>
 
 ## Configuration of vJunOS
+
+configure
+set system host-name vJunOS-1
+set system root-authentication plain-text-password "<wachtwoord>"
+delete chassis auto-image-upgrade
+set system services ssh
+set system services ssh root-login allow
+
+
+set system domain-name lab.local
+set system time-zone Europe/Amsterdam
+set system login user admin class super-user authentication plain-text-password "<wachtwoord>"
+set system services netconf ssh
+set system syslog file messages any any
+set system syslog file messages match RT_ALL
+set system commit synchronize
+
+
+
+
+
+set interfaces ge-0/0/0 ether-options 802.3ad ae0
+set interfaces ge-0/0/1 ether-options 802.3ad ae0
+set interfaces ae0 aggregated-ether-options lacp active
+set interfaces ae0 unit 0 family ethernet-switching
+
+# Set LACP on ge-0/0/0 and ge-0/0/1
+set interfaces ge-0/0/0 ether-options 802.3ad ae0
+set interfaces ge-0/0/1 ether-options 802.3ad ae0
+
+# Configure ae0
+set interfaces ae0 aggregated-ether-options lacp active
+set interfaces ae0 aggregated-ether-options lacp periodic fast
+set interfaces ae0 unit 0 family ethernet-switching
+
+# Enable LLDP (voor troubleshooting)
+set protocols lldp interface all
+set protocols lldp management-address 192.168.1.2
+
+
 
 
 Throughout this documentation additional virtual machines, VLANs and services will be added without changing this fundamental design.
@@ -430,7 +512,7 @@ The objective is to create a clean engineering platform that can safely be modif
 
 ## Commands on Proxmox
 Configureer 2 ovs bridges met extended opties voor bpdu
-
+root@proxmox:~# ovs-vsctl get Bridge vmbr10 other_config
 
 
 ---
@@ -462,6 +544,40 @@ Configureer 2 ovs bridges met extended opties voor bpdu
 ---
 
 </br>
+
+
+## Troubleshooting
+
+| Problem | Reason | Solution |
+| --- | --- | --- |
+| vJunos start niet op | Onvoldoende CPU/RAM | Minimaal 4 vCPUs, 5GB RAM |
+| LACP komt niet omhoog | Verkeerde bond-mode | Gebruik bond-mode 4 (802.3ad) |
+| Geen connectiviteit vmbr10/11 | OVS bridge niet geconfigureerd | ovs-vsctl show controleren |
+| vJunos geef geen IP | DHCP niet beschikbaar op vmbr0 | Statisch IP configureren |
+| Debian herkent netwerk niet | Verkeerde driver | Gebruik virtio voor netwerk |
+| vJunos dataplane werkt niet | Missing kvm: hidden=1 | Voeg toe aan VM config |
+
+
+
+
+## VLAN Extension lab
+
+### VLAN Configuratie
+1. **Op vJunos**:
+   ```junos
+   set vlans vlan10 vlan-id 10
+   set interfaces ae0 unit 10 family ethernet-switching vlan members vlan10
+   set interfaces ae0 unit 10 family ethernet-switching vlan tagging
+
+1. **On Debian**:
+# Voeg VLAN 10 toe aan bond0
+apt install vlan
+echo "8021q" >> /etc/modules
+modprobe 8021q
+vconfig add bond0 10
+ifconfig bond0.10 192.168.10.1 netmask 255.255.255.0 up
+
+
 
 
 
@@ -863,25 +979,3 @@ sudo ufw enable
 
 
 
-```mermaid
-graph TD
-    A["Patiënt aankomst<br/>Spoedeisende Hulp"] --> B["Triage<br/>Urgentie bepalen"]
-    B --> C["Initieel onderzoek<br/>Anamnese & vitale functies"]
-    C --> D["Laboratoriumtesten<br/>Bloed, urine"]
-    D --> E["Beeldvorming<br/>CT-scan/Ultrasound"]
-    E --> F{"Blinddarmontsteking<br/>gediagnostiseerd?"}
-    F -->|Nee| G["Andere behandeling<br/>of ontslag"]
-    F -->|Ja| H{"Complicaties<br/>aanwezig?"}
-    H -->|Perforatie/Peritonitis| I["Acute spoedoperatie<br/>Operatiekamer"]
-    H -->|Ongecompliceerd| J{"Medicamenteuze<br/>behandeling mogelijk?"}
-    J -->|Nee| I
-    J -->|Ja| K["Antibiotica-therapie<br/>Verpleegafdeling"]
-    K --> L{"Klinisch<br/>verbeterd?"}
-    L -->|Nee| I
-    L -->|Ja| M["Verder poliklinisch<br/>vervolgd"]
-    I --> N["Post-operatieve zorg<br/>Intensive Care/Afdeling"]
-    N --> O["Revalidatie<br/>en ontslag"]
-    M --> O
-    G --> O
-    O --> P["Vervolgafspraak<br/>Polikliniek"]
-```
