@@ -114,40 +114,88 @@ graph TB
 
 ## Upload the Debian 13 ISO to Proxmox
 
-Before creating the Debian virtual machine, the Debian 13 installation ISO must be uploaded to the Proxmox storage repository.
+Before creating the Debian virtual machine, upload the Debian 13 installation ISO to your Proxmox storage.
 
-### Steps
+### 1. Access the Proxmox Web Interface
 
-1. Open a web browser and log in to the **Proxmox Web Interface**:
+Open a web browser and navigate to:
 
-```text
-   https://<proxmox-ip>:8006
-```
-Datacenter
-└── <Proxmox Node>
-    └── local (or your preferred storage)
-        └── ISO Images
+`https://<proxmox-ip>:8006`
 
-        Click Upload.
+Log in using your Proxmox administrator credentials.
+
+### 2. Navigate to the ISO Storage
+
+In the left navigation pane, browse to:
+
+- **Datacenter**
+  - **<Proxmox Node>**
+    - **local** (or your preferred storage)
+      - **ISO Images**
+
+### 3. Upload the ISO Image
+
+Click **Upload** and select the previously downloaded **Debian 13 ISO** file from your local system.
+
+### 4. Wait for the Upload to Complete
+
+Monitor the upload progress and wait until the task finishes successfully. The task status should display **OK**.
+
+### 5. Verify the Upload
+
+✅ Confirm that the Debian 13 ISO is listed under **ISO Images** and is available for use when creating a new virtual machine.
+
+> **Note:** If the ISO does not appear immediately, refresh the Proxmox web interface and check the storage location again.
 
 
-Select the downloaded Debian 13 ISO file from your local workstation.
-
-
-Wait for the upload process to complete successfully.
-
-
-
-Verification
-Verify that the Debian ISO image is visible in the ISO Images section.
-✅ Expected Result
-Plain Text1Datacenter2└── <Proxmox Node>3    └── local4        └── ISO Images5            └── debian-13.x.x-amd64-netinst.isoShow more lines
-Once the ISO image appears in the repository, you can proceed with creating the Debian 13 virtual machine.
 ---
 
 </br>
 
-##  vJunos QCOW upload to Proxmox
+
+## Upload the vJunos QCOW2 Image to Proxmox
+
+### 1. Transfer the Image to the Proxmox Host
+
+Copy the vJunos QCOW2 image to the Proxmox server using SCP or another file transfer method. Windows users can alternatively use graphical tools such as **WinSCP** or **FileZilla**.
+
+Example:
+
+```bash
+scp vjunos-switch.qcow2 root@<proxmox-ip>:/var/lib/vz/images/
+```
+
+
+---
+
+
+
+### 2. Verify the Uploaded Image
+
+After transferring the file, connect to the Proxmox host via SSH and verify that the image was uploaded successfully.
+
+First, confirm that the file is present:
+
+```bash
+ls -lh /var/lib/vz/images/
+```
+
+Next, calculate the SHA256 checksum of the uploaded image:
+
+```bash
+sha256sum /var/lib/vz/images/vjunos-switch.qcow2
+```
+
+Example output:
+
+```text
+d2f6e6d3e7ab1234567890abcdef1234567890abcdef1234567890abcdef12  vjunos-switch.qcow2
+```
+
+Compare the resulting checksum with the SHA256 hash provided by Juniper for the downloaded image.
+
+> ✅ **Verification:** The calculated SHA256 checksum matches the checksum published by Juniper, confirming that the image was downloaded and transferred without corruption.
+
 
 ---
 
@@ -336,12 +384,34 @@ After starting the virtual machine, verify that:
 Once these checks have been completed successfully, you can continue with the initial vJunos configuration and the LACP setup described in the next sections.
 
 
+---
+
+</br>
 
 
 # Configurations
 
+---
+
+</br>
+
+## Configuration of Proxmox
+Configureer 2 ovs bridges met extended opties voor bpdu
 
 
+
+---
+
+</br>
+
+## Configuration of Debian
+
+
+---
+
+</br>
+
+## Configuration of vJunOS
 
 
 Throughout this documentation additional virtual machines, VLANs and services will be added without changing this fundamental design.
@@ -352,53 +422,50 @@ The objective is to create a clean engineering platform that can safely be modif
 
 
 
-## Background
-
-Link aggregation is a commonly used technology in enterprise and datacenter networks to combine multiple physical connections into a single logical interface.
-
-Benefits include:
-
-- Increased network availability
-- Link redundancy
-- Improved bandwidth utilization
-- Simplified network management
-- Automatic failover capabilities
-
-This lab environment consists of:
-
-- Proxmox VE as the virtualization platform
-- Debian Linux as the server operating system
-- vJunos Switch as the virtual network switch
-- LACP (IEEE 802.3ad) as the aggregation protocol
+# Troubleshooting
 
 ---
 
-## Prerequisites
+</br>
 
-### Software Requirements
+## Commands on Proxmox
+Configureer 2 ovs bridges met extended opties voor bpdu
 
-- Proxmox VE installed and operational
-- Debian Server ISO image
-- vJunos Switch image
-- Administrative access to Proxmox
 
-### Knowledge Requirements
-
-- Basic Linux administration skills
-- Basic Junos CLI knowledge
-- Understanding of Ethernet switching
-- Understanding of VLANs
-- Understanding of Link Aggregation and LACP
-
-### Infrastructure Requirements
-
-- Sufficient CPU, memory, and storage resources
-- At least two virtual network interfaces between the Debian VM and the vJunos VM
-- Management network connectivity for both virtual machines
 
 ---
 
-## Theory
+</br>
+
+## Commands on Debian
+
+## 📚 Handige commando's
+| Commando | Beschrijving |
+|----------|--------------|
+| `lsb_release -a` | Toont Debian-versie en codenaam |
+| `uname -a` | Toont kernel-versie |
+| `df -h` | Toont schijfgebruik |
+| `free -h` | Toont geheugengebruik |
+| `ip a` | Toont netwerkinterfaces |
+| `sudo apt search <pakket>` | Zoekt naar pakketten |
+| `sudo systemctl list-units --type=service` | Toont actieve services |
+| `sudo journalctl -xe` | Toont systeemlogs |
+
+
+---
+
+</br>
+
+## Commands on vJunOS
+
+
+---
+
+</br>
+
+
+
+# Theory of LACP
 
 ### Link Aggregation
 
