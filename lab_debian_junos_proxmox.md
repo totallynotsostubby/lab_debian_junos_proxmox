@@ -77,7 +77,6 @@ The diagram below illustrates the virtual lab environment that will be used thro
 
 Both virtual machines are connected to three virtual bridges. The **vmbr0** bridge provides management connectivity and is connected to the physical network, allowing access from the management workstation as well as internet connectivity when required. This bridge is typically configured to obtain network settings through DHCP.
 
-The **vmbr10** and **vmbr11** bridges are dedicated to the data plane and are used to establish an LACP-based link aggregation between the Debian host and the vJunos switch. These two independent Layer 2 connections will later be combined into a single logical link using **bond0** on Debian and **ae0** on the vJunos device. This configuration provides both redundancy and increased bandwidth, while also serving as a practical platform for learning technologies such as LLDP, LACP, and VLANs.
 
 In summary:
 
@@ -118,14 +117,15 @@ graph TB
     vmbr0 --> PHY
 ```
 
+The **vmbr10** and **vmbr11** bridges are dedicated to the data plane and are used to establish an LACP-based link aggregation between the Debian host and the vJunos switch. These two independent Layer 2 connections will later be combined into a single logical link using **bond0** on Debian and **ae0** on the vJunos device. This configuration provides both redundancy and increased bandwidth, while also serving as a practical platform for learning technologies such as LLDP, LACP, and VLANs.
 
 ```mermaid
 graph TB
     subgraph Proxmox["Proxmox VE Hypervisor"]
         subgraph Debian["Debian VM\n(Host)"]
-            D0[("eth0\nvmbr0\nManagement")]
-            D1[("eth1\nvmbr10\nLACP Member 1")]
-            D2[("eth2\nvmbr11\nLACP Member 2")]
+            D0[("ens18\nvmbr0\nManagement")]
+            D1[("ens19\nvmbr10\nLACP Member 1")]
+            D2[("ens20\nvmbr11\nLACP Member 2")]
             B0[("bond0\nLACP Aggregation")]
         end
         subgraph vJunos["vJunos VM\n(Switch)"]
