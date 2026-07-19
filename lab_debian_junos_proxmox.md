@@ -393,16 +393,19 @@ This guide provides clear, step-by-step instructions for installing **Debian 13*
    Username: harry
    Password: <your password>
 
-Verify the installation by running:
-cat /etc/debian_version
+4. Verify the installation by running:
+    ```bash
+    cat /etc/debian_version
+    ````
+    Expected output:
+    ```text
+    13.6
+    ```
 
-Expected output:
-13.0
-
-Check the ip address, type : ip address
-
-You now can login via ssh 
-
+5. Check the ip address, type : ip address
+    ```text
+    You now can login via ssh 
+    ````
 
 ---
 
@@ -429,8 +432,8 @@ qm create 701 \
 # Import the vJunos disk image
 qm importdisk 701 /var/lib/vz/images/vJunos-switch-26.2R1.7.qcow2 VM-POOL --format=qcow2
 
-# Attach the disk and configure boot
-qm set 701 --sata0 VM-POOL:vm-604-disk-0
+# Attach the disk and configure boot. Be aware to change 701 for the disk below also
+qm set 701 --sata0 VM-POOL:vm-701-disk-0
 qm set 701 --boot order=sata0
 qm set 701 --cpu host
 qm set 701 --args "-cpu 'host,+sse4.2,+aes'"
