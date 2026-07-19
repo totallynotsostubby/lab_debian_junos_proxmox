@@ -504,6 +504,23 @@ The objective is to create a clean engineering platform that can safely be modif
 
 
 
+
+#### **C. Resource Limits**
+Voeg toe in **sectie 2.1 (Vereisten)**:
+| Component | Minimum | Aanbevolen | Opmerking |
+|-----------|---------|------------|-----------|
+| **Proxmox Host** | 8GB RAM, 4 cores | 16GB RAM, 8 cores | Voor 2 VM’s |
+| **Debian VM** | 2GB RAM, 2 cores | 4GB RAM, 4 cores | Voor LACP + services |
+| **vJunos VM** | 4GB RAM, 4 cores | 8GB RAM, 8 cores | **Dataplane vereist min. 4 cores** |
+| **Opslag** | 20GB per VM | 30GB per VM | vJunos heeft een grote disk |
+
+---
+---
+---
+---
+
+
+
 # Troubleshooting
 
 ---
