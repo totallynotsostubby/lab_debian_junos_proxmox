@@ -381,7 +381,7 @@ This guide provides clear, step-by-step instructions for installing **Debian 13*
 1. Select **`Yes`** to install the GRUB bootloader on `/dev/vda`.
 2. Choose **`/dev/vda`** as the installation location.
 
----
+
 ---
 ## First Boot and Login
 
