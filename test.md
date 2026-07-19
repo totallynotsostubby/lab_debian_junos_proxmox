@@ -19,7 +19,7 @@
 
 ## 📚 Table of Contents
 1. [Objective](##objective)
-2. [Lab Architecture](#lab)
+2. [Lab Architecture](##lab)
 3. [Prerequisites](#prerequisites)
 4. [Preparations](#preparations)
    - [4.1 Downloads](#41-downloads)
@@ -59,7 +59,7 @@ By the end of this lab, you will have a **fully functional virtual network** wit
 
 ---
 
-# Lab
+## Lab
 
 ### Network Topology
 The lab consists of **two virtual machines** connected via **three Proxmox bridges**:
