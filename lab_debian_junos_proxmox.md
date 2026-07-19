@@ -304,11 +304,14 @@ This guide provides clear, step-by-step instructions for installing **Debian 13*
  | Memory            | `2048 MiB` (2 GB)       | Minimum for basic installation    |
  | Network           | `virtio`                | For best performance              |
  | Bridge            | `vmbr0`                 | Default network bridge            |
- | Guestding         | `yes`                   | Guest           |
-
+ 
 
 4. Click **`Finish`** to create the VM.
 5. 💡Add 2 interfaces with vmbr10 and vmbr11. Choose no firewall and make them E1000. This is very important, otherwsie LACP will not work, because the driver for VirtIO does not understand LACP packets. You see weird things.
+
+ | Interface      | Firewall           | Type            | OVS Options       |
+ | vmbr10         | `no`               | E1000           | forward-bpdu=true |
+ | vmbr11         | `no`               | E1000           | forward-bpdu=true |
 
 ---
 
