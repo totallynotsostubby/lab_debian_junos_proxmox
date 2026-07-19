@@ -226,7 +226,7 @@ Example:
 
 ```bash
 # Linux/macOS (Terminal)
-scp vJunos-switch-26.2R1.7.qcow2 root@<proxmox-ip>:/var/lib/vz/images/
+scp [PATH]/vJunos-switch-26.2R1.7.qcow2 root@<proxmox-ip>:/var/lib/vz/images/
 ```
 
 ### 2. Verify the Uploaded Image
