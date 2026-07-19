@@ -315,11 +315,13 @@ This guide provides clear, step-by-step instructions for installing **Debian 13*
 
 ---
 
-## Install Debian 13
+</br>
+
+## Installation of Debian 13
 
 ### Step 1: Start VM and Launch Installer
 
-1. Select the new VM (`debian13-server`) in the Proxmox web interface.
+1. Select the new VM (`deb-lab-01`) in the Proxmox web interface.
 2. Click **`Console`** (or **`>_ Shell`**) to open the console.
 3. Click **`Start`** to power on the VM.
 4. The Debian installer starts automatically. Select **`Graphical install`** (or **`Install`** for text mode).
@@ -332,7 +334,7 @@ This guide provides clear, step-by-step instructions for installing **Debian 13*
  | Language         | `English`           | Or your preferred language       |
  | Country          | `Netherlands`       | For timezone and keyboard settings |
  | Locale           | `en_US.UTF-8`       | UTF-8 encoding                    |
- | Keyboard         | `us`                | Or `nl` for Dutch layout          |
+ | Keyboard         | `American English`  | Do not choose Dutch layout          |
 
 ---
 
@@ -349,9 +351,9 @@ This guide provides clear, step-by-step instructions for installing **Debian 13*
 ### Step 4: User Accounts and Passwords
  | **Option**       | **Action**           | **Note**                          |
  |------------------|----------------------|-----------------------------------|
- | Root password    | Leave empty          | Login with username !               |
+ | Root password    | Leave empty          | Click continue                    |
  | Full name        | Harry Warry          | Optional                          |
- | Username         | `harry`              | User for daily operations        |
+ | Username         | `harry`              | User for daily operations         |
  | User password    | Set a password       | Different from root password      |
 
 ---
