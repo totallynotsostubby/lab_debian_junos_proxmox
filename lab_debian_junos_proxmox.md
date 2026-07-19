@@ -29,15 +29,15 @@
    - [4.1 Proxmox VE Assumptions](#41-proxmox-ve-assumptions)
    - [4.2 Debian VM](#42-debian-vm)
    - [4.3 vJunos VM](#43-vjunos-vm)
-6. [Configurations](#configurations)
-   - [6.1 Proxmox OVS Bridges](#61-proxmox-ovs-bridges)
-   - [6.2 Debian Network Bonding (LACP)](#62-debian-network-bonding-lacp)
-   - [6.3 vJunos LACP Configuration](#63-vjunos-lacp-configuration)
-7. [Verification](#verification)
-8. [Troubleshooting](#troubleshooting)
-9. [Appendix](#appendix)
-   - [9.1 Useful Commands](#91-useful-commands)
-   - [9.2 VLAN Extension (Optional)](#92-vlan-extension-optional)
+5. [Configurations](#configurations)
+   - [5.1 Proxmox OVS Bridges](#51-proxmox-ovs-bridges)
+   - [5.2 Debian Network Bonding (LACP)](#52-debian-network-bonding-lacp)
+   - [5.3 vJunos LACP Configuration](#53-vjunos-lacp-configuration)
+6. [Verification](#verification)
+7. [Troubleshooting](#troubleshooting)
+8. [Appendix](#appendix)
+   - [8.1 Useful Commands](#81-useful-commands)
+   - [8.2 VLAN Extension (Optional)](#82-vlan-extension-optional)
 
 ---
 
@@ -55,7 +55,7 @@ The objective of this document is to deploy a Debian Server and a vJunos Switch 
 |                                                                  |
 |       +---------------+               +---------------+          |
 |		|               |-----vmbr10----|               |          |
-|       | Debian 13 VM  |      LACP     |   vJunos VM   |          |
+|       | Debian 13 VM  |               |   vJunos VM   |          |
 |		|               |-----vmbr11----|               |          |
 |       +---------------+               +---------------+          |
 |               |                               |                  |
@@ -116,7 +116,7 @@ graph TB
     vmbr0 --> PHY
 ```
 
-The **vmbr10** and **vmbr11** bridges are dedicated to the data plane and are used to establish an LACP-based link aggregation between the Debian host and the vJunos switch. These two independent Layer 2 connections will later be combined into a single logical link using **bond0** on Debian and **ae0** on the vJunos device. This configuration provides both redundancy and increased bandwidth, while also serving as a practical platform for learning technologies such as LLDP, LACP, and VLANs.
+The **vmbr10** and **vmbr11** bridges are dedicated to the data plane and are used to establish an LACP-based link aggregation between the Debian host and the vJunos switch. These two independent Layer 2 connections will later be combined into a single logical link using **bond0** on Debian and **ae0** on the vJunos device. This configuration provides a practical platform for learning technologies such as LLDP, LACP, and VLANs.
 
 ```mermaid
 graph TB
@@ -569,7 +569,7 @@ iface bond0 inet manual
 
 </br>
 
-## Configuration of vJunOS
+## 5.3 vJunos LACP Configuration
 
 ```text
 configure
