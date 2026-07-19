@@ -21,11 +21,10 @@
 ## Table of Contents
 1. [Objective](#objective)
 2. [Lab Architecture](#lab-architecture)
-3. [Prerequisites](#prerequisites)
-4. [Preparations](#preparations)
-   - [4.1 Downloads](#41-downloads)
-   - [4.2 Upload Debian ISO to Proxmox](#42-upload-debian-iso-to-proxmox)
-   - [4.3 Upload vJunos Image to Proxmox](#43-upload-vjunos-image-to-proxmox)
+3. [Preparations](#preparations)
+   - [3.1 Downloads](#31-downloads)
+   - [3.2 Upload Debian ISO to Proxmox](#32-upload-debian-iso-to-proxmox)
+   - [3.3 Upload vJunos Image to Proxmox](#33-upload-vjunos-image-to-proxmox)
 5. [Installations](#installations)
    - [5.1 Proxmox VE Assumptions](#51-proxmox-ve-assumptions)
    - [5.2 Debian VM](#52-debian-vm)
@@ -167,7 +166,7 @@ graph TB
 
 </br>
 
-## Downloads:
+## 3.1 Downloads:
 
 | FileName                        | Link                                                             |
 | ------------------------------- | ---------------------------------------------------------------- |
@@ -179,7 +178,7 @@ graph TB
 
 </br>
 
-## Upload the Debian 13 ISO to Proxmox
+## 3.2 Upload the Debian 13 ISO to Proxmox
 
 Before creating the Debian virtual machine, upload the Debian 13 installation ISO to your Proxmox storage.
 
@@ -220,7 +219,7 @@ Monitor the upload progress and wait until the task finishes successfully. The t
 </br>
 
 
-## Upload the vJunos QCOW2 Image to Proxmox
+## 3.3 Upload the vJunos QCOW2 Image to Proxmox
 
 ### 1. Transfer the Image to the Proxmox Host
 
