@@ -33,11 +33,11 @@
    - [5.1 Proxmox OVS Bridges](#51-proxmox-ovs-bridges)
    - [5.2 Debian Network Bonding (LACP)](#52-debian-network-bonding-lacp)
    - [5.3 vJunos LACP Configuration](#53-vjunos-lacp-configuration)
-6. [Verification](#verification)
-7. [Troubleshooting](#troubleshooting)
-8. [Appendix](#appendix)
-   - [8.1 Useful Commands](#81-useful-commands)
-   - [8.2 VLAN Extension (Optional)](#82-vlan-extension-optional)
+6. [Verification & Troubleshooting](#verification-troubleshooting)
+   - [6.1 Commands on Proxmox](#61-commands-on-proxmox)
+   - [6.2 Commands on Debian](#61-commands-on-debian)
+   - [6.3 Commands on JunOS](#61-commands-on-junos)
+7. [VLAN Extension (Optional)](#82-vlan-extension-optional)
 
 ---
 
@@ -626,13 +626,13 @@ show ethernet-switching table
 </br>
 
 
-## Troubleshooting
+## Verification & Troubleshooting
 
 ---
 
 </br>
 
-## Commands on Proxmox
+## 6.1 Commands on Proxmox
 Configureer 2 ovs bridges met extended opties voor bpdu
 root@proxmox:~# ovs-vsctl get Bridge vmbr10 other_config
 
@@ -641,7 +641,7 @@ root@proxmox:~# ovs-vsctl get Bridge vmbr10 other_config
 
 </br>
 
-## Commands on Debian
+## 6.2 Commands on Debian
 
 | Commando | Beschrijving |
 |----------|--------------|
@@ -659,7 +659,7 @@ root@proxmox:~# ovs-vsctl get Bridge vmbr10 other_config
 
 </br>
 
-## Commands on vJunOS
+## 6.3 Commands on vJunOS
 
 | Problem | Reason | Solution |
 | --- | --- | --- |
@@ -676,7 +676,7 @@ root@proxmox:~# ovs-vsctl get Bridge vmbr10 other_config
 
 
 
-## VLAN Extension lab
+## VLAN Extension (Optional)
 
 ### Add VLAN 10 to the LACP port-channel
 **On vJunos**
