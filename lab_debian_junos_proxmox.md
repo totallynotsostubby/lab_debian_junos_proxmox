@@ -218,113 +218,121 @@ https://<proxmox-ip>:8006
 
 </br>
 
-## Installation of Debian
+## Debian 13 Installation on Proxmox VE
 
-
-### 2️⃣ Nieuwe VM aanmaken
-1. Klik in de Proxmox webinterface op **`Create VM`** (rechterboven).
-2. Vul de volgende gegevens in:
-
-   | Instelling | Waarde | Opmerking |
-   |------------|--------|-----------|
-   | **VM ID** | `100` (of volgende vrije ID) | Uniek per Proxmox-node |
-   | **Naam** | `debian13-server` | Kies een duidelijke naam |
-   | **OS** | Selecteer de geüploade **Debian 13 ISO** | Onder `ISO Image` |
-   | **Hard Disk** | `20 GiB` (of meer) | Gebruik **`virtio`** als opslagcontroller |
-   | **CPU** | `2 cores` | Pas aan op basis van workload |
-   | **Memory** | `2048 MiB` (2 GB) | Minimaal voor basisinstallatie |
-   | **Netwerk** | `virtio` | Voor beste prestaties |
-   | **Bridge** | `vmbr0` | Standaard netwerkbrug |
-   | **CD/DVD** | `IDE` (of `SATA`) | Voor ISO-mounting |
-
-3. Klik op **`Finish`** om de VM aan te maken.
-
-> 💡 **Tip:** Gebruik **`virtio`** voor schijven en netwerk voor betere prestaties in KVM-omgevingen.
+This guide provides clear, step-by-step instructions for installing **Debian 13** as a virtual machine (VM) in **Proxmox VE**.
 
 ---
 
----
+## Create New Virtual Machine
 
-### 3️⃣ Debian 13 installeren
-#### Stap 1: VM starten en installer openen
-1. Selecteer de nieuwe VM (`debian13-server`) in de Proxmox webinterface.
-2. Klik op **`Console`** (of **`>_ Shell`**) om de console te openen.
-3. Klik op **`Start`** om de VM op te starten.
-4. De Debian installer start automatisch. Selecteer **`Graphical install`** (of **`Install`** voor tekstmodus).
+1. In the Proxmox web interface, click **`Create VM`** (top-right corner).
 
-#### Stap 2: Taal en regio
-| Optie | Selectie | Opmerking |
-|-------|----------|-----------|
-| **Language** | `Dutch` (of `English`) | Kies je voorkeurstaal |
-| **Country** | `Netherlands` | Voor tijdzone en toetsenbord |
-| **Locale** | `nl_NL.UTF-8` | UTF-8 codering |
-| **Keyboard** | `nl` (of `us`) | Toetsenbordindeling |
+2. Configure the VM with the following settings:
 
-#### Stap 3: Netwerkconfiguratie
-| Optie | Waarde | Opmerking |
-|-------|--------|-----------|
-| **Hostname** | `debian13` | Of een unieke naam (bv. `server01`) |
-| **Domain name** | `local` (of je domein) | Laat leeg voor lokaal gebruik |
-| **IPv4** | `DHCP` | Of configureer een **statisch IP** |
-| **IPv6** | `Neen` | Tenzij je IPv6 gebruikt |
+ | **Setting**       | **Value**               | **Note**                          |
+ |-------------------|-------------------------|-----------------------------------|
+ | VM ID             | `801` (or next available) | Unique per Proxmox node          |
+ | Name              | `deb-lab-01`       | Choose a descriptive name        |
+ | OS                | Debian 13 ISO           | Select under `ISO Image`         |
+ | Hard Disk         | `20 GiB` (or more)      | Use **`virtio`** storage controller |
+ | CPU               | `2 cores`               | Adjust based on workload         |
+ | Memory            | `2048 MiB` (2 GB)       | Minimum for basic installation     |
+ | Network           | `virtio`                | For best performance             |
+ | Bridge            | `vmbr0`                 | Default network bridge           |
+ | Guestding         | `yes`                 | Guest           |
 
-> ⚠️ **Belangrijk:** Als je een **statisch IP** wilt gebruiken, noteer dan:
-> - IP-adres (bv. `192.168.1.100`)
-> - Netmask (bv. `255.255.255.0`)
-> - Gateway (bv. `192.168.1.1`)
-> - DNS-servers (bv. `8.8.8.8, 8.8.4.4`)
 
-#### Stap 4: Gebruikers en wachtwoorden
-| Optie | Actie | Opmerking |
-|-------|-------|-----------|
-| **Root password** | Stel een **sterk wachtwoord** in | Bewaar dit veilig! |
-| **Full name** | Vul je naam in | Optioneel |
-| **Username** | `gijs` (of andere gebruiker) | Gebruiker voor dagelijks gebruik |
-| **User password** | Stel een wachtwoord in | Verschillend van root-wachtwoord |
-
-#### Stap 5: Schijfpartitie
-1. Kies **`Guided - use entire disk`** (voor beginners) of **`Manual`** (voor gevorderden).
-2. Selecteer de virtuele schijf (bv. `/dev/vda`).
-3. Kies **`All files in one partition`** (aanbevolen voor VM's).
-4. Bevestig de wijzigingen en schrijf naar schijf.
-
-#### Stap 6: Pakketselectie
-1. **Deselecteer** alle opties (behalve `standard system utilities`).
-   - Debian 13 installeert standaard een minimale omgeving.
-2. Selecteer **`SSH server`** als je remote toegang wilt.
-3. Selecteer **`Debian desktop environment`** als je een GUI wilt (niet aanbevolen voor servers).
-4. Klik op **`Continue`** om de installatie te starten.
-
-> ⏳ **Wachttijd:** De installatie duurt **5–15 minuten**, afhankelijk van je hardware en netwerksnelheid.
-
-#### Stap 7: Bootloader installeren
-1. Selecteer **`Yes`** om de GRUB bootloader te installeren op `/dev/vda`.
-2. Kies **`/dev/vda`** als installatielocatie.
+4. Click **`Finish`** to create the VM.
+5. 💡Add 2 interfaces with vmbr10 and vmbr11. Choose no firewall and make them E1000. This is very important, otherwsie LACP will not work, because the driver for VirtIO does not understand LACP packets. You see weird things.
 
 ---
+
+## Install Debian 13
+
+### Step 1: Start VM and Launch Installer
+
+1. Select the new VM (`debian13-server`) in the Proxmox web interface.
+2. Click **`Console`** (or **`>_ Shell`**) to open the console.
+3. Click **`Start`** to power on the VM.
+4. The Debian installer starts automatically. Select **`Graphical install`** (or **`Install`** for text mode).
+
 ---
-### 4️⃣ Eerste opstart en inloggen
-1. Na voltooiing van de installatie klik je op **`Finish the installation`**.
-2. De VM herstart automatisch. Sluit de console en start de VM opnieuw op via Proxmox.
-3. Open de console en log in met:
+
+### Step 2: Language and Region Settings
+ | **Option**       | **Selection**       | **Note**                          |
+ |------------------|---------------------|-----------------------------------|
+ | Language         | `English`           | Or your preferred language       |
+ | Country          | `Netherlands`       | For timezone and keyboard settings |
+ | Locale           | `en_US.UTF-8`       | UTF-8 encoding                    |
+ | Keyboard         | `us`                | Or `nl` for Dutch layout          |
+
+---
+
+### Step 3: Network Configuration
+ | **Option**       | **Value**            | **Note**                          |
+ |------------------|----------------------|-----------------------------------|
+ | Hostname         | `deb-lab-01`         | Or a unique name (e.g., `server01`) |
+ | Domain name      | `local`              | Leave empty for local use        |
+ | IPv4             | `DHCP`               | Or configure a **static IP**      |
+ | IPv6             | `No`                 | Unless you use IPv6               |
+
+
+---
+### Step 4: User Accounts and Passwords
+ | **Option**       | **Action**           | **Note**                          |
+ |------------------|----------------------|-----------------------------------|
+ | Root password    | Leave empty          | Login with username !               |
+ | Full name        | Harry Warry          | Optional                          |
+ | Username         | `harry`              | User for daily operations        |
+ | User password    | Set a password       | Different from root password      |
+
+---
+### Step 5: Disk Partitioning
+
+1. Choose **`Guided - use entire disk`** (for beginners) or **`Manual`** (for advanced users).
+2. Select the virtual disk (e.g., `/dev/vda`).
+3. Choose **`All files in one partition`** (recommended for VMs).
+4. Confirm the changes and write to disk.
+
+---
+### Step 6: Package Selection
+
+1. **Deselect** all options except `standard system utilities`.
+   - Debian 13 installs a minimal environment by default.
+2. Select **`SSH server`** you need remote access.
+3. Click **`Continue`** to start the installation.
+
+> ⏳ **Estimated Time:** The installation takes **5–15 minutes**, depending on your hardware and network speed.
+
+---
+### Step 7: Install Bootloader
+
+1. Select **`Yes`** to install the GRUB bootloader on `/dev/vda`.
+2. Choose **`/dev/vda`** as the installation location.
+
+---
+---
+## First Boot and Login
+
+1. After completing the installation, click **`Finish the installation`**.
+2. The VM restarts automatically. Close the console and restart the VM via Proxmox if needed.
+
+3. Open the console and log in with your credentials:
    ```bash
-   Gebruikersnaam: gijs (of je gekozen gebruiker)
-   Wachtwoord: <je wachtwoord>
-   ```
-   > Of als root:
-   > ```bash
-   > login: root
-   > Password: <root-wachtwoord>
-   > ```
+   Username: harry
+   Password: <your password>
 
-4. Voer het volgende commando uit om te controleren of de installatie succesvol was:
-   ```bash
-   cat /etc/debian_version
-   ```
-   **Verwachte output:**
-   ```
-   13.0
-   ```
+Verify the installation by running:
+cat /etc/debian_version
+
+Expected output:
+13.0
+
+Check the ip address, type : ip address
+
+You now can login via ssh 
+
 
 ---
 
@@ -420,7 +428,7 @@ ovs-vsctl set bridge vmbr11 other-config:enable-8021q=true
 # Verificatie
 ovs-vsctl show
 
-````
+```
 
 ---
 
@@ -428,6 +436,38 @@ ovs-vsctl show
 
 ## Configuration of Debian
 
+
+## 🔧 Post-installatie configuratie
+
+### 1. Systeem updaten
+Voer de volgende commando's uit als **root** of met `sudo`:
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt dist-upgrade -y
+sudo apt autoremove -y
+```
+
+### 3. Netwerkconfiguratie (statisch IP)
+Als je een **statisch IP** wilt instellen, bewerk het netwerkconfiguratiebestand:
+```bash
+sudo nano /etc/network/interfaces
+```
+**Voorbeeldconfiguratie (voor `ens18` of `vmbr0`):**
+```ini
+auto ens18
+iface ens18 inet static
+    address 192.168.1.100
+    netmask 255.255.255.0
+    gateway 192.168.1.1
+    dns-nameservers 8.8.8.8 8.8.4.4
+```
+> ⚠️ **Opmerking:** Vervang `ens18` door je netwerkinterface (check met `ip a`).
+> Pas de service toe:
+> ```bash
+> sudo systemctl restart networking
+> ```
+>
+> 
 ```text
 # /etc/network/interfaces
 auto eth1
@@ -455,6 +495,7 @@ iface bond0 inet manual
 
 ## Configuration of vJunOS
 
+```text
 configure
 set system host-name vJunOS-1
 set system root-authentication plain-text-password "<wachtwoord>"
@@ -492,36 +533,15 @@ set interfaces ae0 unit 0 family ethernet-switching
 # Enable LLDP (voor troubleshooting)
 set protocols lldp interface all
 set protocols lldp management-address 192.168.1.2
+```
 
-
-
-
-Throughout this documentation additional virtual machines, VLANs and services will be added without changing this fundamental design.
-
-The objective is **not** to build a production server.
-
-The objective is to create a clean engineering platform that can safely be modified, broken, restored and rebuilt during laboratory exercises.
-
-
-
-
-#### **C. Resource Limits**
-Voeg toe in **sectie 2.1 (Vereisten)**:
-| Component | Minimum | Aanbevolen | Opmerking |
-|-----------|---------|------------|-----------|
-| **Proxmox Host** | 8GB RAM, 4 cores | 16GB RAM, 8 cores | Voor 2 VM’s |
-| **Debian VM** | 2GB RAM, 2 cores | 4GB RAM, 4 cores | Voor LACP + services |
-| **vJunos VM** | 4GB RAM, 4 cores | 8GB RAM, 8 cores | **Dataplane vereist min. 4 cores** |
-| **Opslag** | 20GB per VM | 30GB per VM | vJunos heeft een grote disk |
 
 ---
----
----
----
+
+</br>
 
 
-
-# Troubleshooting
+## Troubleshooting
 
 ---
 
@@ -538,7 +558,6 @@ root@proxmox:~# ovs-vsctl get Bridge vmbr10 other_config
 
 ## Commands on Debian
 
-## 📚 Handige commando's
 | Commando | Beschrijving |
 |----------|--------------|
 | `lsb_release -a` | Toont Debian-versie en codenaam |
@@ -557,14 +576,6 @@ root@proxmox:~# ovs-vsctl get Bridge vmbr10 other_config
 
 ## Commands on vJunOS
 
-
----
-
-</br>
-
-
-## Troubleshooting
-
 | Problem | Reason | Solution |
 | --- | --- | --- |
 | vJunos start niet op | Onvoldoende CPU/RAM | Minimaal 4 vCPUs, 5GB RAM |
@@ -574,425 +585,34 @@ root@proxmox:~# ovs-vsctl get Bridge vmbr10 other_config
 | Debian herkent netwerk niet | Verkeerde driver | Gebruik virtio voor netwerk |
 | vJunos dataplane werkt niet | Missing kvm: hidden=1 | Voeg toe aan VM config |
 
+---
+
+</br>
 
 
 
 ## VLAN Extension lab
 
-### VLAN Configuratie
-1. **Op vJunos**:
-   ```junos
-   set vlans vlan10 vlan-id 10
-   set interfaces ae0 unit 10 family ethernet-switching vlan members vlan10
-   set interfaces ae0 unit 10 family ethernet-switching vlan tagging
+### Add VLAN 10 to the LACP port-channel
+**On vJunos**
+```
+set vlans vlan10 vlan-id 10
+set interfaces ae0 unit 10 family ethernet-switching vlan members vlan10
+set interfaces ae0 unit 10 family ethernet-switching vlan tagging
+```
 
-1. **On Debian**:
-# Voeg VLAN 10 toe aan bond0
+**On Debian**
+```
 apt install vlan
 echo "8021q" >> /etc/modules
 modprobe 8021q
 vconfig add bond0 10
 ifconfig bond0.10 192.168.10.1 netmask 255.255.255.0 up
-
-
-
-
-
-# Theory of LACP
-
-### Link Aggregation
-
-Link Aggregation combines multiple physical interfaces into one logical connection. This increases bandwidth and provides redundancy in case of a link failure.
-
-Advantages include:
-
-- Improved fault tolerance
-- Higher throughput
-- Load balancing across multiple links
-
-### Link Aggregation Control Protocol (LACP)
-
-LACP is an IEEE 802.3ad standard that dynamically manages aggregated links between devices.
-
-Key concepts:
-
-- Link Aggregation Group (LAG)
-- Active and Passive LACP modes
-- Automatic member negotiation
-- Failure detection and recovery
-
-### Aggregated Ethernet on Junos
-
-Junos uses Aggregated Ethernet (AE) interfaces to bundle multiple physical interfaces into a single logical interface.
-
-Example:
-
-- ge-0/0/0
-- ge-0/0/1
-- ae0
-
-### Linux Bonding
-
-Linux bonding allows multiple network interfaces to operate as a single logical interface.
-
-Common bonding modes include:
-
-- balance-rr
-- active-backup
-- 802.3ad (LACP)
-- balance-alb
-
-This guide uses **802.3ad (LACP)** mode.
-
----
-
-## Configuration
-
-### 1. Deploy the Debian Virtual Machine
-
-#### Create the VM
-
-- Create a new VM in Proxmox.
-- Assign CPU, memory, and storage resources.
-- Mount the Debian ISO image.
-- Install Debian.
-- Configure management connectivity.
-- Add two network interfaces dedicated to LACP.
-
-#### Deployment Details
-
-```text
-VM ID:
-Hostname:
-Management IP:
-LACP NIC 1:
-LACP NIC 2:
-
-
-
-
-# 📖 Handleiding: Debian 13 (Trixie) Installeren op Proxmox VE
-
----
-**Versie:** 1.0
-**Laatste update:** 9 juli 2026
-**Doelgroep:** Beheerders, ontwikkelaars, sysadmins
-**Geschatte tijd:** 20–30 minuten
-
----
-
----
-
-## 📌 Inleiding
-Deze handleiding begeleidt je stap voor stap bij het installeren van **Debian 13 (codenaam: *Trixie*)** als virtuele machine (VM) in **Proxmox VE** (9.x of 10.x). Debian 13 biedt de nieuwste stabiliteit, beveiligingsupdates en pakketversies, ideaal voor servers, ontwikkelomgevingen of productie-omgevingen.
-De stappen zijn gebaseerd op de [gids voor Debian 12 op Proxmox VE 9](https://www.dropvps.com/blog/install-debian-12-on-proxmox-ve-9), maar zijn **aangepast voor Debian 13** en aangevuld met best practices voor optimalisatie.
-
----
-
----
-
-## ⚙️ Voorbereiding
-
-### Vereisten
-| Onderdeel | Minimaal | Aanbevolen |
-|-----------|----------|------------|
-| **Proxmox VE** | 8.x of hoger | 9.x/10.x (laatste versie) |
-| **CPU** | 1 core | 2+ cores |
-| **RAM** | 1 GB | 2 GB+ (4 GB voor zware workloads) |
-| **Opslag** | 10 GB | 20 GB+ (SSD/NVMe) |
-| **Netwerk** | DHCP/Static IP | VLAN-ondersteuning (optioneel) |
-| **ISO** | [Debian 13 (Trixie) ISO](https://www.debian.org/download) | `debian-13.0.0-amd64-netinst.iso` of `debian-13.0.0-amd64-DVD-1.iso` |
-
-> ⚠️ **Tip:** Gebruik de **netinst**-ISO voor een minimale installatie (ca. 300 MB) of de **DVD-1**-ISO voor een complete offline installatie.
-
----
-
-### Stappenoverzicht
-1. [Debian 13 ISO downloaden en uploaden naar Proxmox](#1-debian-13-iso-uploaden-naar-proxmox)
-2. [Nieuwe VM aanmaken in Proxmox](#2-nieuwe-vm-aanmaken)
-3. [Debian 13 installeren via de installer](#3-debian-13-installeren)
-4. [Eerste opstart en inloggen](#4-eerste-opstart-en-inloggen)
-5. [Post-installatie configuratie](#5-post-installatie-configuratie)
-6. [Optimalisaties voor Proxmox](#6-optimalisaties-voor-proxmox)
-
----
-
----
-
-## 🚀 Installatieproces
-
----
-
-### 1️⃣ Debian 13 ISO uploaden naar Proxmox
-#### Stap 1: ISO downloaden
-1. Ga naar de [officiële Debian downloadpagina](https://www.debian.org/download).
-2. Kies de **64-bit (amd64)** versie van **Debian 13 (Trixie)**.
-   - Voor een minimale installatie: `debian-13.0.0-amd64-netinst.iso`
-   - Voor een complete installatie: `debian-13.0.0-amd64-DVD-1.iso`
-3. Download de ISO naar je lokale machine.
-
-#### Stap 2: ISO uploaden naar Proxmox
-1. Log in op de **Proxmox webinterface** (`https://<proxmox-ip>:8006`).
-2. Navigeer naar:
-   **`Datacenter` → `<Jouw Proxmox-node>` → `local (of andere opslag)` → `ISO Images`**.
-3. Klik op **`Upload`** en selecteer de gedownloade Debian 13 ISO.
-   - Wacht tot de upload voltooid is (status: **"OK"**).
-
-> ✅ **Verificatie:** Controleer of de ISO zichtbaar is in de lijst onder `ISO Images`.
-
----
-
----
-
-### 2️⃣ Nieuwe VM aanmaken
-1. Klik in de Proxmox webinterface op **`Create VM`** (rechterboven).
-2. Vul de volgende gegevens in:
-
-   | Instelling | Waarde | Opmerking |
-   |------------|--------|-----------|
-   | **VM ID** | `100` (of volgende vrije ID) | Uniek per Proxmox-node |
-   | **Naam** | `debian13-server` | Kies een duidelijke naam |
-   | **OS** | Selecteer de geüploade **Debian 13 ISO** | Onder `ISO Image` |
-   | **Hard Disk** | `20 GiB` (of meer) | Gebruik **`virtio`** als opslagcontroller |
-   | **CPU** | `2 cores` | Pas aan op basis van workload |
-   | **Memory** | `2048 MiB` (2 GB) | Minimaal voor basisinstallatie |
-   | **Netwerk** | `virtio` | Voor beste prestaties |
-   | **Bridge** | `vmbr0` | Standaard netwerkbrug |
-   | **CD/DVD** | `IDE` (of `SATA`) | Voor ISO-mounting |
-
-3. Klik op **`Finish`** om de VM aan te maken.
-
-> 💡 **Tip:** Gebruik **`virtio`** voor schijven en netwerk voor betere prestaties in KVM-omgevingen.
-
----
-
----
-
-### 3️⃣ Debian 13 installeren
-#### Stap 1: VM starten en installer openen
-1. Selecteer de nieuwe VM (`debian13-server`) in de Proxmox webinterface.
-2. Klik op **`Console`** (of **`>_ Shell`**) om de console te openen.
-3. Klik op **`Start`** om de VM op te starten.
-4. De Debian installer start automatisch. Selecteer **`Graphical install`** (of **`Install`** voor tekstmodus).
-
-#### Stap 2: Taal en regio
-| Optie | Selectie | Opmerking |
-|-------|----------|-----------|
-| **Language** | `Dutch` (of `English`) | Kies je voorkeurstaal |
-| **Country** | `Netherlands` | Voor tijdzone en toetsenbord |
-| **Locale** | `nl_NL.UTF-8` | UTF-8 codering |
-| **Keyboard** | `nl` (of `us`) | Toetsenbordindeling |
-
-#### Stap 3: Netwerkconfiguratie
-| Optie | Waarde | Opmerking |
-|-------|--------|-----------|
-| **Hostname** | `debian13` | Of een unieke naam (bv. `server01`) |
-| **Domain name** | `local` (of je domein) | Laat leeg voor lokaal gebruik |
-| **IPv4** | `DHCP` | Of configureer een **statisch IP** |
-| **IPv6** | `Neen` | Tenzij je IPv6 gebruikt |
-
-> ⚠️ **Belangrijk:** Als je een **statisch IP** wilt gebruiken, noteer dan:
-> - IP-adres (bv. `192.168.1.100`)
-> - Netmask (bv. `255.255.255.0`)
-> - Gateway (bv. `192.168.1.1`)
-> - DNS-servers (bv. `8.8.8.8, 8.8.4.4`)
-
-#### Stap 4: Gebruikers en wachtwoorden
-| Optie | Actie | Opmerking |
-|-------|-------|-----------|
-| **Root password** | Stel een **sterk wachtwoord** in | Bewaar dit veilig! |
-| **Full name** | Vul je naam in | Optioneel |
-| **Username** | `gijs` (of andere gebruiker) | Gebruiker voor dagelijks gebruik |
-| **User password** | Stel een wachtwoord in | Verschillend van root-wachtwoord |
-
-#### Stap 5: Schijfpartitie
-1. Kies **`Guided - use entire disk`** (voor beginners) of **`Manual`** (voor gevorderden).
-2. Selecteer de virtuele schijf (bv. `/dev/vda`).
-3. Kies **`All files in one partition`** (aanbevolen voor VM's).
-4. Bevestig de wijzigingen en schrijf naar schijf.
-
-#### Stap 6: Pakketselectie
-1. **Deselecteer** alle opties (behalve `standard system utilities`).
-   - Debian 13 installeert standaard een minimale omgeving.
-2. Selecteer **`SSH server`** als je remote toegang wilt.
-3. Selecteer **`Debian desktop environment`** als je een GUI wilt (niet aanbevolen voor servers).
-4. Klik op **`Continue`** om de installatie te starten.
-
-> ⏳ **Wachttijd:** De installatie duurt **5–15 minuten**, afhankelijk van je hardware en netwerksnelheid.
-
-#### Stap 7: Bootloader installeren
-1. Selecteer **`Yes`** om de GRUB bootloader te installeren op `/dev/vda`.
-2. Kies **`/dev/vda`** als installatielocatie.
-
----
----
-### 4️⃣ Eerste opstart en inloggen
-1. Na voltooiing van de installatie klik je op **`Finish the installation`**.
-2. De VM herstart automatisch. Sluit de console en start de VM opnieuw op via Proxmox.
-3. Open de console en log in met:
-   ```bash
-   Gebruikersnaam: gijs (of je gekozen gebruiker)
-   Wachtwoord: <je wachtwoord>
-   ```
-   > Of als root:
-   > ```bash
-   > login: root
-   > Password: <root-wachtwoord>
-   > ```
-
-4. Voer het volgende commando uit om te controleren of de installatie succesvol was:
-   ```bash
-   cat /etc/debian_version
-   ```
-   **Verwachte output:**
-   ```
-   13.0
-   ```
-
----
----
-## 🔧 Post-installatie configuratie
-
-### 1. Systeem updaten
-Voer de volgende commando's uit als **root** of met `sudo`:
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt dist-upgrade -y
-sudo apt autoremove -y
 ```
 
-### 2. Proxmox Guest Tools installeren (optioneel)
-De **QEMU Guest Agent** verbetert de integratie met Proxmox (bv. voor backups en shutdowns).
-1. Installeer de agent:
-   ```bash
-   sudo apt install qemu-guest-agent -y
-   ```
-2. Start de service:
-   ```bash
-   sudo systemctl enable --now qemu-guest-agent
-   ```
-3. **In Proxmox:**
-   - Ga naar de VM-instellingen (**`Options` → `QEMU Guest Agent`**).
-   - Zet **`Enable`** op **`Yes`**.
 
-### 3. Netwerkconfiguratie (statisch IP)
-Als je een **statisch IP** wilt instellen, bewerk het netwerkconfiguratiebestand:
-```bash
-sudo nano /etc/network/interfaces
-```
-**Voorbeeldconfiguratie (voor `ens18` of `vmbr0`):**
-```ini
-auto ens18
-iface ens18 inet static
-    address 192.168.1.100
-    netmask 255.255.255.0
-    gateway 192.168.1.1
-    dns-nameservers 8.8.8.8 8.8.4.4
-```
-> ⚠️ **Opmerking:** Vervang `ens18` door je netwerkinterface (check met `ip a`).
-> Pas de service toe:
-> ```bash
-> sudo systemctl restart networking
-> ```
 
-### 4. SSH-toegang inschakelen (als niet geïnstalleerd)
-```bash
-sudo apt install openssh-server -y
-sudo systemctl enable --now ssh
-```
-> ⚠️ **Beveiliging:** Schakel **wachtwoordloze inloggen** in met SSH-sleutels en schakel root-inloggen uit:
-> ```bash
-> sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
-> sudo systemctl restart ssh
-> ```
 
-### 5. Firewall configureren (UFW)
-Installeer en schakel de firewall in:
-```bash
-sudo apt install ufw -y
-sudo ufw allow ssh
-sudo ufw enable
-```
-> 🔥 **Tip:** Open alleen poorten die je nodig hebt (bv. `sudo ufw allow 80/tcp` voor HTTP).
-
----
----
-## ⚡ Optimalisaties voor Proxmox
-
-| Optimalisatie | Commando/Actie | Voordeel |
-|---------------|----------------|----------|
-| **VirtIO-driverversie controleren** | `lspci \| grep -i virtio` | Bevestigt dat VirtIO wordt gebruikt |
-| **Ballooning inschakelen** | In Proxmox: **`Hardware` → `Add` → `Memory` → `Ballooning Device`** | Dynamische RAM-toewijzing |
-| **KVM-versnelling** | `lsmod \| grep kvm` | Controleert of KVM actief is |
-| **Swap-bestand aanmaken** | `sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile` | Voegt swap-ruimte toe |
-| **Tijdzone instellen** | `sudo timedatectl set-timezone Europe/Amsterdam` | Juiste tijd voor Nederland |
-| **Hostname wijzigen** | `sudo hostnamectl set-hostname <nieuwenaam>` | Permanente hostname-wijziging |
-
-### Aanbevolen VM-instellingen in Proxmox
-| Instelling | Waarde | Opmerking |
-|------------|--------|-----------|
-| **CPU Type** | `host` | Beste prestaties |
-| **SATA Controller** | `VirtIO` | Voor schijven |
-| **Netwerkadapter** | `VirtIO` | Voor netwerk |
-| **BIOS** | `OVMF (UEFI)` | Voor moderne systemen |
-| **Machine Type** | `q35` | Voor betere hardware-ondersteuning |
-
----
----
-## 📊 Controlelijst na installatie
-- [ ] Debian 13 ISO geüpload naar Proxmox
-- [ ] VM aangemaakt met voldoende resources
-- [ ] Debian 13 geïnstalleerd (taal, netwerk, gebruikers)
-- [ ] Systeem geüpdatet (`apt update && apt upgrade`)
-- [ ] QEMU Guest Agent geïnstalleerd
-- [ ] Netwerkconfiguratie (statisch IP of DHCP) ingesteld
-- [ ] SSH-toegang geconfigureerd (en beveiligd)
-- [ ] Firewall (UFW) ingeschakeld
-- [ ] VirtIO-drivers en KVM-versnelling gecontroleerd
-- [ ] Ballooning ingeschakeld (optioneel)
-- [ ] Snapshots gemaakt in Proxmox
-
----
----
-## 🛠️ Probleemoplossing
-
-| Probleem | Oplossing |
-|----------|-----------|
-| **ISO wordt niet herkend in Proxmox** | Controleer of de ISO correct is geüpload naar de juiste opslag. Gebruik `qm set <VMID> --cdrom local:iso/debian-13.0.0-amd64-netinst.iso` om handmatig te mounten. |
-| **Netwerk werkt niet na installatie** | Controleer de netwerkinterface met `ip a`. Bewerk `/etc/network/interfaces` en herstart de service: `sudo systemctl restart networking`. |
-| **VM start niet op** | Controleer of de bootloader (GRUB) correct is geïnstalleerd. Gebruik in Proxmox: **`Options` → `Boot Order`** om de opstartvolgorde aan te passen. |
-| **Trage prestaties** | Gebruik **VirtIO** voor schijven en netwerk. Controleer CPU- en RAM-toewijzing in Proxmox. |
-| **SSH-verbinding weigert** | Controleer of de SSH-service draait: `sudo systemctl status ssh`. Controleer de firewall: `sudo ufw status`. |
-| **Foutmelding: "No bootable device"** | Zorg ervoor dat de ISO is gemount als CD/DVD in de VM-instellingen (**`Hardware` → `CD/DVD`**). |
-
----
----
-## 📚 Handige commando's
-| Commando | Beschrijving |
-|----------|--------------|
-| `lsb_release -a` | Toont Debian-versie en codenaam |
-| `uname -a` | Toont kernel-versie |
-| `df -h` | Toont schijfgebruik |
-| `free -h` | Toont geheugengebruik |
-| `ip a` | Toont netwerkinterfaces |
-| `sudo apt search <pakket>` | Zoekt naar pakketten |
-| `sudo systemctl list-units --type=service` | Toont actieve services |
-| `sudo journalctl -xe` | Toont systeemlogs |
-
----
----
-## 🔗 Nuttige links
-- [Officiële Debian 13 Release Notes](https://www.debian.org/News/2024/20240706)
-- [Proxmox VE Documentatie](https://pve.proxmox.com/wiki/Main_Page)
-- [Debian Installatiegids](https://www.debian.org/releases/trixie/installmanual)
-- [DropVPS: Debian 12 op Proxmox VE 9](https://www.dropvps.com/blog/install-debian-12-on-proxmox-ve-9) *(bron voor deze handleiding)*
-
----
----
-## 📝 Versiegeschiedenis
-| Versie | Datum | Wijzigingen |
-|--------|-------|-------------|
-| 1.0 | 09-07-2026 | Initiële versie, gebaseerd op Debian 13 (Trixie) |
 
 
 
