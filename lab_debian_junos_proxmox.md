@@ -585,54 +585,49 @@ iface bond0 inet manual
 
 ## 5.3 vJunos LACP Configuration
 
-```text
+```junos
 configure
 set system host-name vJunOS-1
+# Set password for root
 set system root-authentication plain-text-password "<wachtwoord>"
+# Set password for harry
+set system login user harry class super-user authentication plain-text-password "<wachtwoord>"
 delete chassis auto-image-upgrade
 set system services ssh
+# Only if you want root to be enabled to log in
 set system services ssh root-login allow
+# Enable LLDP (voor troubleshooting)
+set protocols lldp interface all
+commit
+```
 
-
-set system domain-name lab.local
-set system time-zone Europe/Amsterdam
-set system login user admin class super-user authentication plain-text-password "<wachtwoord>"
-set system services netconf ssh
-set system syslog file messages any any
-set system syslog file messages match RT_ALL
-set system commit synchronize
-
-
-
-
-
-set interfaces ge-0/0/0 ether-options 802.3ad ae0
-set interfaces ge-0/0/1 ether-options 802.3ad ae0
-set interfaces ae0 aggregated-ether-options lacp active
-set interfaces ae0 unit 0 family ethernet-switching
-
+```junos
 # Set LACP on ge-0/0/0 and ge-0/0/1
 set interfaces ge-0/0/0 ether-options 802.3ad ae0
 set interfaces ge-0/0/1 ether-options 802.3ad ae0
-
 # Configure ae0
 set interfaces ae0 aggregated-ether-options lacp active
 set interfaces ae0 aggregated-ether-options lacp periodic fast
 set interfaces ae0 unit 0 family ethernet-switching
-
-# Enable LLDP (voor troubleshooting)
-set protocols lldp interface all
-set protocols lldp management-address 192.168.1.2
 ```
 
-
-Verify LACP Status
+Verify LLDP/LACP Status
 
 ```junos
 show lacp interfaces
 show lacp statistics
 show lldp neighbors
 show ethernet-switching table
+```
+
+These I have not entered
+```text
+set system domain-name lab.local
+set system time-zone Europe/Amsterdam
+set system services netconf ssh
+set system syslog file messages any any
+set system syslog file messages match RT_ALL
+set system commit synchronize
 ```
 
 ---
