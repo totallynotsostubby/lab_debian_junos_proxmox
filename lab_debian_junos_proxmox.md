@@ -602,6 +602,7 @@ commit
 ```
 
 ```junos
+set chassis aggregated-devices ethernet device-count 1
 # Set LACP on ge-0/0/0 and ge-0/0/1
 set interfaces ge-0/0/0 ether-options 802.3ad ae0
 set interfaces ge-0/0/1 ether-options 802.3ad ae0
